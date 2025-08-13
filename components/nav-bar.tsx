@@ -1,6 +1,6 @@
 import { Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import ThemeToggle from "@/components/theme-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 import Link from "next/link";
 
@@ -15,7 +15,7 @@ export default function NavBar() {
           </span>
         </div>
 
-        <div className="hidden md:flex items-center space-x-8">
+        {/* <div className="hidden md:flex items-center space-x-8">
           <a
             href="#features"
             className="text-sm font-medium hover:text-primary transition-colors"
@@ -34,7 +34,7 @@ export default function NavBar() {
           >
             Testimonials
           </a>
-        </div>
+        </div> */}
 
         <div className="flex items-center space-x-4">
           <ThemeToggle />
