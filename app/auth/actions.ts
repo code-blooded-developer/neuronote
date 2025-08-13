@@ -2,24 +2,68 @@
 import { CredentialsSignin } from "next-auth";
 import { hash } from "bcryptjs";
 import prisma from "@/lib/prisma";
-import { signUpSchema, signInSchema, SignInFormState } from "@/lib/validation";
+import {
+  signUpSchema,
+  signInSchema,
+  SignInFormState,
+  SignUpFormState,
+} from "@/lib/validation";
 import { signIn, signOut } from "@/auth";
 
-export async function signUpAction(formData: FormData) {
-  const data = Object.fromEntries(formData) as Record<string, string>;
+export async function signUpAction(
+  _: SignUpFormState | undefined,
+  formData: FormData
+): Promise<SignUpFormState> {
+  const data = {
+    name: formData.get("name")?.toString() ?? "",
+    email: formData.get("email")?.toString() ?? "",
+    password: formData.get("password")?.toString() ?? "",
+    confirmPassword: formData.get("confirmPassword")?.toString() ?? "",
+    agreeToTerms: formData.get("agreeToTerms") === "on",
+  };
+
   const parsed = signUpSchema.safeParse(data);
   if (!parsed.success)
-    return { ok: false, errors: parsed.error.flatten().fieldErrors };
+    return {
+      ok: false,
+      errors: parsed.error.flatten().fieldErrors,
+      values: data,
+    };
 
   const { name, email, password } = parsed.data;
   const exists = await prisma.user.findUnique({ where: { email } });
-  if (exists) return { ok: false, errors: { email: ["Email already in use"] } };
+  if (exists)
+    return {
+      ok: false,
+      errors: { email: ["Email already in use"] },
+      values: data,
+    };
 
   const passwordHash = await hash(password, 12);
   await prisma.user.create({ data: { name, email, passwordHash } });
 
-  // Auto-login; you can pass a target with redirectTo
-  await signIn("credentials", { email, password, redirectTo: "/" }); // v5 API
+  try {
+    await signIn("credentials", {
+      email,
+      password,
+    });
+  } catch (error: unknown) {
+    console.error(
+      error instanceof CredentialsSignin ? error.message : "Unexpected error"
+    );
+    return {
+      ok: false,
+      errors: {
+        credentials: [
+          error instanceof CredentialsSignin
+            ? error.message.replace(/\. Read more.*/i, "")
+            : "Unexpected error",
+        ],
+      },
+      values: data,
+    };
+  }
+
   return { ok: true };
 }
 

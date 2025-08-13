@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useActionState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,87 +17,32 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Check } from "lucide-react";
 
+import { signUpAction } from "../actions";
+
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    agreeToTerms: false,
-  });
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [state, action, pending] = useActionState(signUpAction, undefined);
   const { toast } = useToast();
 
   const passwordRequirements = [
-    { text: "At least 8 characters", met: formData.password.length >= 8 },
-    { text: "Contains uppercase letter", met: /[A-Z]/.test(formData.password) },
-    { text: "Contains lowercase letter", met: /[a-z]/.test(formData.password) },
-    { text: "Contains number", met: /\d/.test(formData.password) },
+    {
+      text: "At least 8 characters",
+      met: (state?.values?.password.length ?? 0) >= 8,
+    },
+    {
+      text: "Contains uppercase letter",
+      met: /[A-Z]/.test(state?.values?.password ?? ""),
+    },
+    {
+      text: "Contains lowercase letter",
+      met: /[a-z]/.test(state?.values?.password ?? ""),
+    },
+    { text: "Contains number", met: /\d/.test(state?.values?.password ?? "") },
+    {
+      text: "Contains special character",
+      met: /[!@#$%^&*(),.?":{}|<>]/.test(state?.values?.password ?? ""),
+    },
   ];
-
-  const validateForm = () => {
-    const newErrors: { [key: string]: string } = {};
-
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = "First name is required";
-    }
-
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = "Last name is required";
-    }
-
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
-
-    if (!formData.agreeToTerms) {
-      newErrors.agreeToTerms = "You must agree to the terms and conditions";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) return;
-
-    setIsLoading(true);
-
-    // Simulate API call
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      toast({
-        title: "Account created successfully!",
-        description:
-          "Welcome to NeuroNote. You can now start uploading documents.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleGoogleSignUp = () => {
     toast({
@@ -158,44 +103,22 @@ export default function SignUp() {
           </div>
 
           {/* Sign Up Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First name</Label>
-                <Input
-                  id="firstName"
-                  placeholder="John"
-                  value={formData.firstName}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      firstName: e.target.value,
-                    }))
-                  }
-                  className={errors.firstName ? "border-destructive" : ""}
-                />
-                {errors.firstName && (
-                  <p className="text-sm text-destructive">{errors.firstName}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last name</Label>
-                <Input
-                  id="lastName"
-                  placeholder="Doe"
-                  value={formData.lastName}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      lastName: e.target.value,
-                    }))
-                  }
-                  className={errors.lastName ? "border-destructive" : ""}
-                />
-                {errors.lastName && (
-                  <p className="text-sm text-destructive">{errors.lastName}</p>
-                )}
-              </div>
+          <form action={action} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                name="name"
+                placeholder="John Doe"
+                disabled={pending}
+                defaultValue={state?.values?.name ?? ""}
+                className={state?.errors?.name ? "border-destructive" : ""}
+              />
+              {state?.errors?.name && (
+                <p className="text-sm text-destructive">
+                  {state?.errors?.name}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -203,15 +126,16 @@ export default function SignUp() {
               <Input
                 id="email"
                 type="email"
+                name="email"
                 placeholder="john@example.com"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, email: e.target.value }))
-                }
-                className={errors.email ? "border-destructive" : ""}
+                disabled={pending}
+                defaultValue={state?.values?.email ?? ""}
+                className={state?.errors?.email ? "border-destructive" : ""}
               />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email}</p>
+              {state?.errors?.email && (
+                <p className="text-sm text-destructive">
+                  {state?.errors?.email}
+                </p>
               )}
             </div>
 
@@ -220,17 +144,15 @@ export default function SignUp() {
               <div className="relative">
                 <Input
                   id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Create a strong password"
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      password: e.target.value,
-                    }))
-                  }
+                  disabled={pending}
+                  defaultValue={state?.values?.password ?? ""}
                   className={
-                    errors.password ? "border-destructive pr-10" : "pr-10"
+                    state?.errors?.password
+                      ? "border-destructive pr-10"
+                      : "pr-10"
                   }
                 />
                 <Button
@@ -249,7 +171,7 @@ export default function SignUp() {
               </div>
 
               {/* Password Requirements */}
-              {formData.password && (
+              {state?.values?.password && (
                 <div className="space-y-1">
                   {passwordRequirements.map((req, index) => (
                     <div
@@ -273,8 +195,10 @@ export default function SignUp() {
                 </div>
               )}
 
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password}</p>
+              {state?.errors?.password && (
+                <p className="text-sm text-destructive">
+                  {state?.errors?.password}
+                </p>
               )}
             </div>
 
@@ -282,37 +206,29 @@ export default function SignUp() {
               <Label htmlFor="confirmPassword">Confirm password</Label>
               <Input
                 id="confirmPassword"
+                name="confirmPassword"
                 type="password"
                 placeholder="Confirm your password"
-                value={formData.confirmPassword}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    confirmPassword: e.target.value,
-                  }))
+                defaultValue={state?.values?.confirmPassword ?? ""}
+                className={
+                  state?.errors?.confirmPassword ? "border-destructive" : ""
                 }
-                className={errors.confirmPassword ? "border-destructive" : ""}
               />
-              {errors.confirmPassword && (
+              {state?.errors?.confirmPassword && (
                 <p className="text-sm text-destructive">
-                  {errors.confirmPassword}
+                  {state?.errors?.confirmPassword}
                 </p>
               )}
             </div>
 
             <div className="flex items-center space-x-2">
               <Checkbox
-                id="terms"
-                checked={formData.agreeToTerms}
-                onCheckedChange={(checked) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    agreeToTerms: checked as boolean,
-                  }))
-                }
+                id="agreeToTerms"
+                name="agreeToTerms"
+                defaultChecked={state?.values?.agreeToTerms ?? false}
               />
               <Label
-                htmlFor="terms"
+                htmlFor="agreeToTerms"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 I agree to the{" "}
@@ -325,12 +241,14 @@ export default function SignUp() {
                 </Link>
               </Label>
             </div>
-            {errors.agreeToTerms && (
-              <p className="text-sm text-destructive">{errors.agreeToTerms}</p>
+            {state?.errors?.agreeToTerms && (
+              <p className="text-sm text-destructive">
+                {state?.errors?.agreeToTerms}
+              </p>
             )}
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Create Account"}
+            <Button type="submit" className="w-full" disabled={pending}>
+              {pending ? "Creating account..." : "Create Account"}
             </Button>
           </form>
 

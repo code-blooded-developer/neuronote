@@ -100,6 +100,7 @@ export default function SignIn() {
                 name="email"
                 type="email"
                 placeholder="Enter your email"
+                disabled={pending}
                 defaultValue={state?.values?.email ?? ""}
                 className={state?.errors?.email ? "border-destructive" : ""}
               />
@@ -116,6 +117,7 @@ export default function SignIn() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
+                  disabled={pending}
                   defaultValue={state?.values?.password ?? ""}
                   className={
                     state?.errors?.password
