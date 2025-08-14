@@ -11,6 +11,8 @@ import {
   signUpSchema,
   forgotPasswordSchema,
   ForgotPasswordFormState,
+  resetPasswordSchema,
+  ResetPasswordFormState,
 } from "@/lib/validation";
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/mailer";
 
@@ -147,6 +149,64 @@ export async function forgotPasswordAction(
   });
 
   await sendPasswordResetEmail(email, token);
+
+  return {
+    ok: true,
+  };
+}
+
+export async function resetPasswordAction(
+  _: ResetPasswordFormState | undefined,
+  formData: FormData
+): Promise<ResetPasswordFormState> {
+  const data = {
+    token: formData.get("token")?.toString() ?? "",
+    password: formData.get("password")?.toString() ?? "",
+    confirmPassword: formData.get("confirmPassword")?.toString() ?? "",
+  };
+
+  const parsed = resetPasswordSchema.safeParse(data);
+  if (!parsed.success)
+    return {
+      ok: false,
+      errors: parsed.error.flatten().fieldErrors,
+      values: data,
+    };
+
+  const { token, password } = parsed.data;
+  const resetToken = await prisma.passwordResetToken.findUnique({
+    where: { token },
+  });
+
+  if (!resetToken || resetToken.expires < new Date()) {
+    return {
+      ok: false,
+      errors: { token: ["Invalid or expired reset link"] },
+      values: data,
+    };
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: resetToken.email },
+  });
+  if (!user) {
+    return {
+      ok: false,
+      errors: { token: ["Invalid or expired token"] },
+      values: data,
+    };
+  }
+
+  const passwordHash = await hash(password, 12);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordHash },
+  });
+
+  await prisma.passwordResetToken.delete({
+    where: { token },
+  });
 
   return {
     ok: true,

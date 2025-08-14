@@ -1,5 +1,58 @@
 import { z } from "zod";
 
+function passwordRefineCallback(
+  data: { password: string; confirmPassword: string },
+  ctx: z.RefinementCtx
+) {
+  const { password, confirmPassword } = data;
+
+  // Only run extra password checks if min and max length passed
+  if (password.length >= 8 && password.length <= 72) {
+    if (!/[A-Z]/.test(password)) {
+      ctx.addIssue({
+        path: ["password"],
+        code: "custom",
+        message: "Contain at least one uppercase letter.",
+      });
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      ctx.addIssue({
+        path: ["password"],
+        code: "custom",
+        message: "Contain at least one lowercase letter.",
+      });
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      ctx.addIssue({
+        path: ["password"],
+        code: "custom",
+        message: "Contain at least one number.",
+      });
+      return;
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      ctx.addIssue({
+        path: ["password"],
+        code: "custom",
+        message: "Contain at least one special character.",
+      });
+      return;
+    }
+  }
+
+  // Confirm password match
+  if (password !== confirmPassword) {
+    ctx.addIssue({
+      path: ["confirmPassword"],
+      code: "custom",
+      message: "Passwords do not match.",
+    });
+    return;
+  }
+}
+
 export const signUpSchema = z
   .object({
     name: z
@@ -16,55 +69,7 @@ export const signUpSchema = z
       message: "You must agree to the terms and conditions.",
     }),
   })
-  .superRefine((data, ctx) => {
-    const { password, confirmPassword } = data;
-
-    // Only run extra password checks if min and max length passed
-    if (password.length >= 8 && password.length <= 72) {
-      if (!/[A-Z]/.test(password)) {
-        ctx.addIssue({
-          path: ["password"],
-          code: "custom",
-          message: "Contain at least one uppercase letter.",
-        });
-        return;
-      }
-      if (!/[a-z]/.test(password)) {
-        ctx.addIssue({
-          path: ["password"],
-          code: "custom",
-          message: "Contain at least one lowercase letter.",
-        });
-        return;
-      }
-      if (!/[0-9]/.test(password)) {
-        ctx.addIssue({
-          path: ["password"],
-          code: "custom",
-          message: "Contain at least one number.",
-        });
-        return;
-      }
-      if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-        ctx.addIssue({
-          path: ["password"],
-          code: "custom",
-          message: "Contain at least one special character.",
-        });
-        return;
-      }
-    }
-
-    // Confirm password match
-    if (password !== confirmPassword) {
-      ctx.addIssue({
-        path: ["confirmPassword"],
-        code: "custom",
-        message: "Passwords do not match.",
-      });
-      return;
-    }
-  });
+  .superRefine(passwordRefineCallback);
 
 export const signInSchema = z.object({
   email: z.email({ message: "Please enter a valid email address." }),
@@ -78,13 +83,16 @@ export const forgotPasswordSchema = z.object({
   email: z.email({ message: "Please enter a valid email address." }),
 });
 
-export const resetPasswordSchema = z.object({
-  token: z.string().min(10),
-  password: z
-    .string()
-    .min(8, { message: "Password must be at least 8 characters long." })
-    .max(72, { message: "Password must be at most 72 characters long." }),
-});
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().min(10),
+    password: z
+      .string()
+      .min(8, { message: "Password must be at least 8 characters long." })
+      .max(72, { message: "Password must be at most 72 characters long." }),
+    confirmPassword: z.string(),
+  })
+  .superRefine(passwordRefineCallback);
 
 export type SignUpFormState = {
   ok: boolean;
@@ -119,6 +127,7 @@ export type ResetPasswordFormState = {
   errors?: {
     token?: string[];
     password?: string[];
+    confirmPassword?: string[];
   };
   values?: z.infer<typeof resetPasswordSchema>;
 };
