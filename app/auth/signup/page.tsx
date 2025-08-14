@@ -2,7 +2,6 @@
 
 import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { signIn } from "next-auth/react";
 
@@ -27,13 +26,12 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
   const [state, action, pending] = useActionState(signUpAction, undefined);
-  const router = useRouter();
 
   useEffect(() => {
     if (state?.ok) {
       setShowVerification(true);
     }
-  }, [state, router]);
+  }, [state]);
 
   const handleGoogleSignUp = () => {
     signIn("google", { callbackUrl: "/dashboard" });

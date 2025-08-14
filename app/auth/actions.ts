@@ -9,8 +9,10 @@ import {
   signInSchema,
   SignUpFormState,
   signUpSchema,
+  forgotPasswordSchema,
+  ForgotPasswordFormState,
 } from "@/lib/validation";
-import { sendVerificationEmail } from "@/lib/mailer";
+import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/mailer";
 
 import { signIn, signOut } from "@/auth";
 
@@ -111,6 +113,44 @@ export async function signInAction(
       values: data,
     };
   }
+}
+
+export async function forgotPasswordAction(
+  _: ForgotPasswordFormState | undefined,
+  formData: FormData
+): Promise<ForgotPasswordFormState> {
+  const data = {
+    email: formData.get("email")?.toString() ?? "",
+  };
+
+  const parsed = forgotPasswordSchema.safeParse(data);
+  if (!parsed.success)
+    return {
+      ok: false,
+      errors: parsed.error.flatten().fieldErrors,
+      values: data,
+    };
+
+  const { email } = parsed.data;
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    return { ok: true };
+  }
+
+  const token = crypto.randomBytes(32).toString("hex");
+  const expires = new Date(Date.now() + 60 * 60 * 1000);
+
+  await prisma.passwordResetToken.upsert({
+    where: { email },
+    update: { token, expires },
+    create: { email, token, expires },
+  });
+
+  await sendPasswordResetEmail(email, token);
+
+  return {
+    ok: true,
+  };
 }
 
 export async function signOutAction() {

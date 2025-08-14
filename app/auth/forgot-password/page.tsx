@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
-import { CheckCircle,Mail } from "lucide-react";
+import { CheckCircle, Mail } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -14,54 +14,21 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+
+import { forgotPasswordAction } from "../actions";
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [state, action, pending] = useActionState(
+    forgotPasswordAction,
+    undefined
+  );
   const [isSuccess, setIsSuccess] = useState(false);
-  const [error, setError] = useState("");
-  const { toast } = useToast();
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /\S+@\S+\.\S+/;
-    return emailRegex.test(email);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!email) {
-      setError("Email is required");
-      return;
-    }
-
-    if (!validateEmail(email)) {
-      setError("Please enter a valid email address");
-      return;
-    }
-
-    setError("");
-    setIsLoading(true);
-
-    // Simulate API call
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+  useEffect(() => {
+    if (state?.ok) {
       setIsSuccess(true);
-      toast({
-        title: "Reset link sent!",
-        description: "Check your email for password reset instructions.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [state]);
 
   if (isSuccess) {
     return (
@@ -77,7 +44,9 @@ export default function ForgotPassword() {
             <CardDescription>
               We&apos;ve sent a password reset link to
               <br />
-              <span className="font-medium text-foreground">{email}</span>
+              <span className="font-medium text-foreground">
+                {state?.values?.email ?? ""}
+              </span>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -126,23 +95,25 @@ export default function ForgotPassword() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form action={action} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email address</Label>
               <Input
                 id="email"
                 type="email"
+                name="email"
                 placeholder="Enter your email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={error ? "border-destructive" : ""}
+                defaultValue={state?.values?.email ?? ""}
+                className={state?.errors?.email ? "border-destructive" : ""}
                 autoFocus
               />
-              {error && <p className="text-sm text-destructive">{error}</p>}
+              {state?.errors?.email && (
+                <p className="text-sm text-destructive">{state.errors.email}</p>
+              )}
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Sending reset link..." : "Send reset link"}
+            <Button type="submit" className="w-full" disabled={pending}>
+              {pending ? "Sending reset link..." : "Send reset link"}
             </Button>
 
             <div className="text-center">

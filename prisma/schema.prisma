@@ -58,7 +58,7 @@ model VerificationToken {
 
 model PasswordResetToken {
   id         String   @id @default(cuid())
-  identifier String   // email or userId
+  email      String   @unique
   token      String   @unique
   expires    DateTime
   createdAt  DateTime @default(now())

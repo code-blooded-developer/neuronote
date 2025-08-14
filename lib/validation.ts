@@ -74,11 +74,11 @@ export const signInSchema = z.object({
     .max(72, { message: "Password must be at most 72 characters long." }),
 });
 
-export const forgotSchema = z.object({
+export const forgotPasswordSchema = z.object({
   email: z.email({ message: "Please enter a valid email address." }),
 });
 
-export const resetSchema = z.object({
+export const resetPasswordSchema = z.object({
   token: z.string().min(10),
   password: z
     .string()
@@ -107,5 +107,18 @@ export type SignInFormState = {
   };
   values?: z.infer<typeof signInSchema>;
 };
-export type ForgotFormState = z.infer<typeof forgotSchema>;
-export type ResetFormState = z.infer<typeof resetSchema>;
+export type ForgotPasswordFormState = {
+  ok: boolean;
+  errors?: {
+    email?: string[];
+  };
+  values?: z.infer<typeof forgotPasswordSchema>;
+};
+export type ResetPasswordFormState = {
+  ok: boolean;
+  errors?: {
+    token?: string[];
+    password?: string[];
+  };
+  values?: z.infer<typeof resetPasswordSchema>;
+};
