@@ -1,5 +1,6 @@
-import { auth } from "@/auth";
 import { NextRequest, NextResponse } from "next/server";
+
+import { auth } from "@/auth";
 
 const protectedRoutes = ["/dashboard", "/profile"]; // pages that require login
 const unprotectedRoutes = ["/", "/auth/signin", "/auth/signup"]; // pages for guests only

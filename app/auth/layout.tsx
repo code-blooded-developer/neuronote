@@ -1,6 +1,7 @@
-import { Brain, ArrowLeft } from "lucide-react";
-import { ThemeToggle } from "@/components/theme-toggle";
 import Link from "next/link";
+import { ArrowLeft,Brain } from "lucide-react";
+
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function RootLayout({
   children,

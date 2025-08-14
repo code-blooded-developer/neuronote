@@ -1,13 +1,17 @@
 "use server";
 import { CredentialsSignin } from "next-auth";
 import { hash } from "bcryptjs";
+import crypto from "crypto";
+
 import prisma from "@/lib/prisma";
 import {
-  signUpSchema,
-  signInSchema,
   SignInFormState,
+  signInSchema,
   SignUpFormState,
+  signUpSchema,
 } from "@/lib/validation";
+import { sendVerificationEmail } from "@/lib/mailer";
+
 import { signIn, signOut } from "@/auth";
 
 export async function signUpAction(
@@ -40,36 +44,26 @@ export async function signUpAction(
     };
 
   const passwordHash = await hash(password, 12);
-  await prisma.user.create({ data: { name, email, passwordHash } });
+  await prisma.user.create({
+    data: { name, email, passwordHash },
+  });
 
-  try {
-    await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+  const token = crypto.randomBytes(32).toString("hex");
+  const expires = new Date(Date.now() + 1000 * 60 * 60);
 
-    return {
-      ok: true,
-    };
-  } catch (error: unknown) {
-    console.error(
-      error instanceof CredentialsSignin ? error.message : "Unexpected error"
-    );
-    return {
-      ok: false,
-      errors: {
-        credentials: [
-          error instanceof CredentialsSignin
-            ? error.message.replace(/\. Read more.*/i, "")
-            : "Unexpected error",
-        ],
-      },
-      values: data,
-    };
-  }
+  await prisma.verificationToken.create({
+    data: {
+      identifier: email,
+      token,
+      expires,
+    },
+  });
 
-  return { ok: true };
+  await sendVerificationEmail(email, token);
+
+  return {
+    ok: true,
+  };
 }
 
 export async function signInAction(

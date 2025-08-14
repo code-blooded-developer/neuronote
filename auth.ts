@@ -1,8 +1,10 @@
-import NextAuth, { type DefaultSession, CredentialsSignin } from "next-auth";
+import NextAuth, { CredentialsSignin, type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { z } from "zod";
 import { compare } from "bcryptjs";
+import { z } from "zod";
+
 import prisma from "@/lib/prisma";
 
 // Extend session type
@@ -34,6 +36,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const user = await prisma.user.findUnique({ where: { email } });
 
         if (!user) throw new CredentialsSignin("No user found with this email");
+        if (!user.emailVerified) {
+          throw new CredentialsSignin(
+            "Please verify your email before logging in."
+          );
+        }
         if (!user.passwordHash)
           throw new CredentialsSignin("Invalid credentials");
 
@@ -48,7 +55,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         };
       },
     }),
-    // Add OAuth providers here later (Google, GitHub, etc.)
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
+    }),
   ],
   callbacks: {
     async session({ session, token }) {

@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -14,16 +17,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Eye, EyeOff } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import Link from "next/link";
 
 import { signInAction } from "../actions";
 
 export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [state, action, pending] = useActionState(signInAction, undefined);
-  const { toast } = useToast();
   const router = useRouter();
 
   // Redirect after successful sign in
@@ -34,10 +33,7 @@ export default function SignIn() {
   }, [state, router]);
 
   const handleGoogleSignIn = () => {
-    toast({
-      title: "Google Sign In",
-      description: "Google authentication would be implemented here.",
-    });
+    signIn("google", { callbackUrl: "/dashboard" });
   };
 
   return (
@@ -56,6 +52,7 @@ export default function SignIn() {
           <Button
             variant="outline"
             className="w-full"
+            disabled={pending}
             onClick={handleGoogleSignIn}
             type="button"
           >

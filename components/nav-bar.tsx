@@ -1,8 +1,8 @@
-import { Brain } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
-
 import Link from "next/link";
+import { Brain } from "lucide-react";
+
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Button } from "@/components/ui/button";
 
 export default function NavBar() {
   return (

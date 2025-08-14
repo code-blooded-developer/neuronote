@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useActionState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
+import { signIn } from "next-auth/react";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,54 +14,39 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Check } from "lucide-react";
 
 import { signUpAction } from "../actions";
 
+import Verification from "./verification";
+
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
   const [state, action, pending] = useActionState(signUpAction, undefined);
-  const { toast } = useToast();
   const router = useRouter();
 
-  // Redirect after successful sign up
   useEffect(() => {
     if (state?.ok) {
-      router.push("/dashboard");
+      setShowVerification(true);
     }
   }, [state, router]);
 
-  const passwordRequirements = [
-    {
-      text: "At least 8 characters",
-      met: (state?.values?.password.length ?? 0) >= 8,
-    },
-    {
-      text: "Contains uppercase letter",
-      met: /[A-Z]/.test(state?.values?.password ?? ""),
-    },
-    {
-      text: "Contains lowercase letter",
-      met: /[a-z]/.test(state?.values?.password ?? ""),
-    },
-    { text: "Contains number", met: /\d/.test(state?.values?.password ?? "") },
-    {
-      text: "Contains special character",
-      met: /[!@#$%^&*(),.?":{}|<>]/.test(state?.values?.password ?? ""),
-    },
-  ];
-
   const handleGoogleSignUp = () => {
-    toast({
-      title: "Google Sign Up",
-      description: "Google authentication would be implemented here.",
-    });
+    signIn("google", { callbackUrl: "/dashboard" });
   };
+
+  if (showVerification) {
+    return (
+      <Verification
+        email={state?.values?.email ?? ""}
+        setShowVerification={setShowVerification}
+      />
+    );
+  }
 
   return (
     <div className="flex-1 flex items-center justify-center p-4">
@@ -76,6 +64,7 @@ export default function SignUp() {
           <Button
             variant="outline"
             className="w-full"
+            disabled={pending}
             onClick={handleGoogleSignUp}
             type="button"
           >
@@ -179,31 +168,6 @@ export default function SignUp() {
                 </Button>
               </div>
 
-              {/* Password Requirements */}
-              {state?.values?.password && (
-                <div className="space-y-1">
-                  {passwordRequirements.map((req, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 text-xs"
-                    >
-                      <Check
-                        className={`h-3 w-3 ${
-                          req.met ? "text-green-500" : "text-muted-foreground"
-                        }`}
-                      />
-                      <span
-                        className={
-                          req.met ? "text-green-500" : "text-muted-foreground"
-                        }
-                      >
-                        {req.text}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
               {state?.errors?.password && (
                 <p className="text-sm text-destructive">
                   {state?.errors?.password}
@@ -218,6 +182,7 @@ export default function SignUp() {
                 name="confirmPassword"
                 type="password"
                 placeholder="Confirm your password"
+                disabled={pending}
                 defaultValue={state?.values?.confirmPassword ?? ""}
                 className={
                   state?.errors?.confirmPassword ? "border-destructive" : ""

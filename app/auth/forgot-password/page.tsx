@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { CheckCircle,Mail } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,7 +15,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, CheckCircle } from "lucide-react";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
