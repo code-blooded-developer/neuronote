@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,16 +24,14 @@ export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [state, action, pending] = useActionState(signInAction, undefined);
   const { toast } = useToast();
+  const router = useRouter();
 
+  // Redirect after successful sign in
   useEffect(() => {
-    if (state?.ok === false && state.errors && state.errors?.credentials) {
-      toast({
-        title: "Sign In Error",
-        description: state.errors.credentials,
-        variant: "destructive",
-      });
+    if (state?.ok) {
+      router.push("/dashboard");
     }
-  }, [state, toast]);
+  }, [state, router]);
 
   const handleGoogleSignIn = () => {
     toast({
@@ -90,6 +90,15 @@ export default function SignIn() {
               </span>
             </div>
           </div>
+
+          {/* API Error Message */}
+          {state?.errors?.credentials && (
+            <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+              <p className="text-sm text-destructive">
+                {state?.errors?.credentials}
+              </p>
+            </div>
+          )}
 
           {/* Email/Password Form */}
           <form action={action} className="space-y-4">

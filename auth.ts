@@ -50,9 +50,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
     // Add OAuth providers here later (Google, GitHub, etc.)
   ],
-  pages: {
-    signIn: "/signin", // optional custom page
-  },
   callbacks: {
     async session({ session, token }) {
       if (token) session.user.id = token.sub!;

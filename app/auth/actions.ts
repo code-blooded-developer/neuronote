@@ -46,7 +46,12 @@ export async function signUpAction(
     await signIn("credentials", {
       email,
       password,
+      redirect: false,
     });
+
+    return {
+      ok: true,
+    };
   } catch (error: unknown) {
     console.error(
       error instanceof CredentialsSignin ? error.message : "Unexpected error"
@@ -90,7 +95,12 @@ export async function signInAction(
     await signIn("credentials", {
       email,
       password,
+      redirect: false,
     });
+
+    return {
+      ok: true,
+    };
   } catch (error: unknown) {
     console.error(
       error instanceof CredentialsSignin ? error.message : "Unexpected error"
@@ -107,8 +117,6 @@ export async function signInAction(
       values: data,
     };
   }
-
-  return { ok: true };
 }
 
 export async function signOutAction() {

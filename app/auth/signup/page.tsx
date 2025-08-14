@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useActionState } from "react";
+import { useState, useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +24,14 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [state, action, pending] = useActionState(signUpAction, undefined);
   const { toast } = useToast();
+  const router = useRouter();
+
+  // Redirect after successful sign up
+  useEffect(() => {
+    if (state?.ok) {
+      router.push("/dashboard");
+    }
+  }, [state, router]);
 
   const passwordRequirements = [
     {
