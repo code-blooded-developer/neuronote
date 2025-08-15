@@ -1,6 +1,6 @@
 "use server";
 import { CredentialsSignin } from "next-auth";
-import { hash } from "bcryptjs";
+import { hash, compare } from "bcryptjs";
 import crypto from "crypto";
 
 import prisma from "@/lib/prisma";
@@ -193,6 +193,15 @@ export async function resetPasswordAction(
     return {
       ok: false,
       errors: { token: ["Invalid or expired token"] },
+      values: data,
+    };
+  }
+
+  const isSameAsOld = user.passwordHash && await compare(password, user.passwordHash);
+  if (isSameAsOld) {
+    return {
+      ok: false,
+      errors: { token: ["New password cannot be the same as the old password"] },
       values: data,
     };
   }

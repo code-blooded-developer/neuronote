@@ -104,6 +104,7 @@ export default function ForgotPassword() {
                 name="email"
                 placeholder="Enter your email address"
                 defaultValue={state?.values?.email ?? ""}
+                disabled={pending}
                 className={state?.errors?.email ? "border-destructive" : ""}
                 autoFocus
               />

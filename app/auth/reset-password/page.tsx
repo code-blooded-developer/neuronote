@@ -140,7 +140,7 @@ export default function ResetPasswordPage({
             <input type="hidden" name="token" value={token} />
 
             <div className="space-y-2">
-              <Label htmlFor="password"> NewPassword</Label>
+              <Label htmlFor="password"> New Password</Label>
               <div className="relative">
                 <Input
                   id="password"
