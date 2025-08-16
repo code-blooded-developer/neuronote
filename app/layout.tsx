@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
-import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/toaster";
+import { AppProviders } from "./providers";
 
 import "./globals.css";
 
@@ -18,10 +17,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <Toaster />
-          {children}
-        </ThemeProvider>
+        <html lang="en" suppressHydrationWarning>
+          <body>
+            <AppProviders>{children}</AppProviders>
+          </body>
+        </html>
       </body>
     </html>
   );
