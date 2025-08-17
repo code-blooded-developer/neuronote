@@ -3,6 +3,7 @@
 import { ProgressProvider } from "@bprogress/next/app";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
+import { SessionProvider } from "next-auth/react";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
@@ -13,7 +14,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         options={{ showSpinner: false }}
         shallowRouting
       >
-        {children}
+        <SessionProvider>{children}</SessionProvider>
       </ProgressProvider>
       <Toaster />
     </ThemeProvider>
