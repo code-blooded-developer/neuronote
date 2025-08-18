@@ -41,7 +41,7 @@ import { useSession } from "next-auth/react";
 
 const navigationItems = [
   { title: "Home", url: "/dashboard", icon: Home },
-  { title: "My Documents", url: "/dashboard/documents", icon: FileText },
+  { title: "My Documents", url: "/documents", icon: FileText },
   { title: "Collections", url: "/dashboard/collections", icon: FolderOpen },
   { title: "AI Chat", url: "/dashboard/chat", icon: MessageSquare },
   { title: "Settings", url: "/dashboard/settings", icon: Settings },
