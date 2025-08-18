@@ -50,3 +50,33 @@ export async function createDocumentEntry(
 
   return doc;
 }
+
+export async function getUserDocuments() {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const docs = await prisma.document.findMany({
+    where: {
+      userId: session.user.id,
+      deletedAt: null,
+    },
+    orderBy: { createdAt: "desc" },
+  })
+
+  const docsWithUrls = await Promise.all(
+    docs.map(async (doc) => {
+      const { data, error } = await supabase.storage
+        .from("documents")
+        .createSignedUrl(doc.storagePath, 60 * 60);
+
+      if (error) throw error
+
+      return {
+        ...doc,
+        url: data.signedUrl,
+      }
+    })
+  )
+
+  return docsWithUrls
+}

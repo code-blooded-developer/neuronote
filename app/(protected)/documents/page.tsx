@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Search,
   Upload,
@@ -13,9 +13,6 @@ import {
   Trash2,
   FileText,
   File,
-  Image,
-  Video,
-  Archive,
   MoreHorizontal,
   Plus,
   CheckCircle,
@@ -55,7 +52,10 @@ import { useToast } from "@/hooks/use-toast";
 import {
   getSignedUploadUrl,
   createDocumentEntry,
+  getUserDocuments
 } from "@/app/(protected)/actions/document";
+
+import { useProgress } from "@bprogress/next";
 
 interface Document {
   id: number;
@@ -162,6 +162,29 @@ export default function DocumentsPage() {
   const [sortBy, setSortBy] = useState("recent");
   const [uploadQueue, setUploadQueue] = useState<UploadStatus[]>([]);
   const { toast } = useToast();
+   const { start, stop } = useProgress();
+
+  useEffect(() => {
+    // Fetch user documents on mount
+    const fetchDocuments = async () => {
+      try {
+         start();
+        const documents = await getUserDocuments();
+        console.log("Fetched documents:", documents);
+      } catch (error) {
+        console.error("Failed to fetch documents:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load documents.",
+          variant: "destructive",
+        });
+      }  finally {
+        stop();
+      }
+    };
+
+    fetchDocuments();
+  }, [start, stop, toast]);
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes";
@@ -169,66 +192,6 @@ export default function DocumentsPage() {
     const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  };
-
-  const simulateUpload = async (uploadStatus: UploadStatus) => {
-    // Simulate upload progress
-    for (let progress = 0; progress <= 100; progress += 10) {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      setUploadQueue((prev) =>
-        prev.map((item) =>
-          item.id === uploadStatus.id ? { ...item, progress } : item
-        )
-      );
-    }
-
-    // Switch to processing
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    setUploadQueue((prev) =>
-      prev.map((item) =>
-        item.id === uploadStatus.id
-          ? { ...item, status: "processing", progress: 100 }
-          : item
-      )
-    );
-
-    // Simulate processing time
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // Complete or error (90% success rate for demo)
-    const isSuccess = Math.random() > 0.1;
-
-    setUploadQueue((prev) =>
-      prev.map((item) =>
-        item.id === uploadStatus.id
-          ? {
-              ...item,
-              status: isSuccess ? "completed" : "error",
-              error: isSuccess ? undefined : "Failed to process document",
-            }
-          : item
-      )
-    );
-
-    if (isSuccess) {
-      toast({
-        title: "Upload completed",
-        description: `${uploadStatus.name} has been successfully uploaded and processed.`,
-      });
-    } else {
-      toast({
-        title: "Upload failed",
-        description: `Failed to process ${uploadStatus.name}. Please try again.`,
-        variant: "destructive",
-      });
-    }
-
-    // Remove from queue after 3 seconds
-    setTimeout(() => {
-      setUploadQueue((prev) =>
-        prev.filter((item) => item.id !== uploadStatus.id)
-      );
-    }, 3000);
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -358,21 +321,6 @@ export default function DocumentsPage() {
       case "docx":
       case "doc":
         return <FileText className="h-8 w-8 text-blue-500" />;
-      case "xlsx":
-      case "xls":
-        return <FileText className="h-8 w-8 text-green-500" />;
-      case "jpg":
-      case "jpeg":
-      case "png":
-      case "gif":
-        return <Image className="h-8 w-8 text-purple-500" />;
-      case "mp4":
-      case "mov":
-      case "avi":
-        return <Video className="h-8 w-8 text-orange-500" />;
-      case "zip":
-      case "rar":
-        return <Archive className="h-8 w-8 text-gray-500" />;
       default:
         return <File className="h-8 w-8 text-gray-500" />;
     }
@@ -672,7 +620,6 @@ export default function DocumentsPage() {
                                 : item
                             )
                           );
-                          simulateUpload(upload);
                         }}
                       >
                         Retry
