@@ -52,7 +52,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   getSignedUploadUrl,
   createDocumentEntry,
-  getUserDocuments
+  getUserDocuments,
 } from "@/app/(protected)/actions/document";
 
 import { useProgress } from "@bprogress/next";
@@ -90,20 +90,21 @@ export default function DocumentsPage() {
   const [sortBy, setSortBy] = useState("recent");
   const [uploadQueue, setUploadQueue] = useState<UploadStatus[]>([]);
   const { toast } = useToast();
-   const { start, stop } = useProgress();
+  const { start, stop } = useProgress();
 
   useEffect(() => {
     // Fetch user documents on mount
     const fetchDocuments = async () => {
       try {
-         start();
+        start();
         const documents = await getUserDocuments();
-        
+
         setDocuments(documents);
         if (documents.length === 0) {
           toast({
             title: "No documents found",
-            description: "You have no documents yet. Upload your first document.",
+            description:
+              "You have no documents yet. Upload your first document.",
           });
         }
       } catch (error) {
@@ -113,7 +114,7 @@ export default function DocumentsPage() {
           description: "Failed to load documents.",
           variant: "destructive",
         });
-      }  finally {
+      } finally {
         stop();
       }
     };
@@ -264,16 +265,15 @@ export default function DocumentsPage() {
   const sortDocuments = (documents: Document[]) => {
     switch (sortBy) {
       case "name":
-        return [...documents].sort((a, b) => a.fileName.localeCompare(b.fileName));
-      case "size":
-        return [...documents].sort(
-          (a, b) => a.size - b.size
+        return [...documents].sort((a, b) =>
+          a.fileName.localeCompare(b.fileName)
         );
+      case "size":
+        return [...documents].sort((a, b) => a.size - b.size);
       case "recent":
         return [...documents].sort(
           (a, b) =>
-            new Date(b.createdAt).getTime() -
-            new Date(a.createdAt).getTime()
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
       default:
         return documents;
@@ -282,8 +282,9 @@ export default function DocumentsPage() {
 
   const filteredDocuments = sortDocuments(
     documents.filter((doc) => {
-      const matchesSearch =
-        doc.fileName.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = doc.fileName
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
       const matchesFilter =
         selectedFilter === "all" ||
         (selectedFilter === "starred" && doc.isStarred);
@@ -299,8 +300,8 @@ export default function DocumentsPage() {
           className="hover:shadow-lg transition-shadow cursor-pointer group"
         >
           <CardHeader className="pb-2">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
                 {getFileIcon(doc.mimeType)}
                 <div className="flex-1 min-w-0">
                   <CardTitle className="text-sm font-medium truncate">
@@ -316,7 +317,7 @@ export default function DocumentsPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                   >
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
@@ -366,7 +367,9 @@ export default function DocumentsPage() {
               </div> */}
               <div className="text-xs text-muted-foreground">
                 {/* <p>By {doc.author}</p> */}
-                <p>Created {new Date(doc.createdAt).toLocaleDateString('en')}</p>
+                <p>
+                  Created {new Date(doc.createdAt).toLocaleDateString("en")}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -390,7 +393,9 @@ export default function DocumentsPage() {
                     <span>•</span>
                     {/* <span>By {doc.author}</span>
                     <span>•</span> */}
-                    <span>Created {new Date(doc.createdAt).toLocaleDateString('en')}</span>
+                    <span>
+                      Created {new Date(doc.createdAt).toLocaleDateString("en")}
+                    </span>
                   </div>
                 </div>
                 {/* <div className="hidden md:flex items-center gap-2">
@@ -641,10 +646,13 @@ export default function DocumentsPage() {
                   ? "Try adjusting your search terms"
                   : "Upload your first document to get started"}
               </p>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Upload Document
-              </Button>
+              <div {...getRootProps()}>
+                <input {...getInputProps()} />
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Upload Document
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : (
