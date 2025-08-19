@@ -17,7 +17,6 @@ import {
   Plus,
   CheckCircle,
   XCircle,
-  Clock,
   Loader2,
   X,
 } from "lucide-react";
@@ -62,13 +61,15 @@ import { useProgress } from "@bprogress/next";
 
 import { Document } from "@/lib/validation";
 
+import { DocumentStatus } from "@prisma/client";
+
 interface UploadStatus {
   id: string;
   file: File;
   name: string;
   size: string;
   progress: number;
-  status: "uploading" | "processing" | "completed" | "error";
+  status: DocumentStatus;
   error?: string;
 }
 
@@ -200,7 +201,7 @@ export default function DocumentsPage() {
           name: file.name,
           size: formatFileSize(file.size),
           progress: 0,
-          status: "uploading",
+          status: DocumentStatus.uploading,
         };
         setUploadQueue((prev) => [...prev, uploadStatus]);
 
@@ -227,20 +228,22 @@ export default function DocumentsPage() {
             );
           }
 
-          // Mark as processing
-          updateQueue(uploadStatus.id, { status: "processing", progress: 100 });
-
           try {
-            await createDocumentEntry(documentId, path, {
+            const uploadedDoc = await createDocumentEntry(documentId, path, {
               name: file.name,
               type: file.type,
               size: file.size,
             });
 
-            updateQueue(uploadStatus.id, { status: "completed" });
+            setDocuments((prev) => [...prev, uploadedDoc]);
+
+            updateQueue(uploadStatus.id, {
+              status: DocumentStatus.ready,
+            });
+
             toast({
               title: "Upload completed",
-              description: `${file.name} has been successfully uploaded and processed.`,
+              description: `${file.name} has been successfully uploaded.`,
             });
           } catch {
             handleError(
@@ -268,7 +271,6 @@ export default function DocumentsPage() {
           variant: "destructive",
         });
       } finally {
-        // auto-remove after 5s
         if (uploadStatus) {
           setTimeout(() => {
             setUploadQueue((prev) =>
@@ -300,7 +302,6 @@ export default function DocumentsPage() {
       case "application/pdf":
         return <FileText className="h-8 w-8 text-red-500" />;
       case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-      case "application/msword":
         return <FileText className="h-8 w-8 text-blue-500" />;
       default:
         return <File className="h-8 w-8 text-gray-500" />;
@@ -554,11 +555,16 @@ export default function DocumentsPage() {
             <CardHeader>
               <CardTitle className="text-lg">Upload Progress</CardTitle>
               <CardDescription>
-                {uploadQueue.filter((u) => u.status === "uploading").length}{" "}
+                {
+                  uploadQueue.filter(
+                    (u) => u.status === DocumentStatus.uploading
+                  ).length
+                }{" "}
                 uploading,{" "}
-                {uploadQueue.filter((u) => u.status === "processing").length}{" "}
-                processing,{" "}
-                {uploadQueue.filter((u) => u.status === "completed").length}{" "}
+                {
+                  uploadQueue.filter((u) => u.status === DocumentStatus.ready)
+                    .length
+                }{" "}
                 completed
               </CardDescription>
             </CardHeader>
@@ -569,13 +575,10 @@ export default function DocumentsPage() {
                   className="flex items-center gap-4 p-3 rounded-lg border bg-muted/30"
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    {upload.status === "uploading" && (
+                    {upload.status === DocumentStatus.uploading && (
                       <Loader2 className="h-5 w-5 text-blue-500 animate-spin flex-shrink-0" />
                     )}
-                    {upload.status === "processing" && (
-                      <Clock className="h-5 w-5 text-orange-500 flex-shrink-0" />
-                    )}
-                    {upload.status === "completed" && (
+                    {upload.status === DocumentStatus.ready && (
                       <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
                     )}
                     {upload.status === "error" && (
@@ -586,16 +589,13 @@ export default function DocumentsPage() {
                       <p className="font-medium truncate">{upload.name}</p>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <span>{upload.size}</span>
-                        {upload.status === "uploading" && (
+                        {upload.status === DocumentStatus.uploading && (
                           <span>• Uploading...</span>
                         )}
-                        {upload.status === "processing" && (
-                          <span>• Processing document...</span>
-                        )}
-                        {upload.status === "completed" && (
+                        {upload.status === DocumentStatus.ready && (
                           <span>• Upload completed</span>
                         )}
-                        {upload.status === "error" && (
+                        {upload.status === DocumentStatus.error && (
                           <span className="text-destructive">
                             • {upload.error}
                           </span>
@@ -605,8 +605,7 @@ export default function DocumentsPage() {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    {(upload.status === "uploading" ||
-                      upload.status === "processing") && (
+                    {upload.status === DocumentStatus.uploading && (
                       <div className="w-24">
                         <Progress value={upload.progress} className="h-2" />
                       </div>

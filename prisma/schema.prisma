@@ -78,15 +78,16 @@ model Document {
   mimeType     String
   size         Int
   createdAt    DateTime @default(now())
-  status       String?
+  updatedAt    DateTime? @updatedAt
+  status       DocumentStatus  @default(uploading)
 
   isStarred    Boolean  @default(false)
   deletedAt    DateTime?
 
   tags         DocumentTag[] @relation("DocumentTags")
+  chunks       DocumentChunk[]
 
   @@index([userId, createdAt])
-  
   @@unique([userId, storagePath])
 }
 
@@ -102,4 +103,19 @@ model DocumentTag {
   createdAt DateTime @default(now())
 
   @@unique([userId, name])
+}
+
+model DocumentChunk {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id])
+  content    String   // text chunk
+  createdAt  DateTime @default(now())
+}
+
+enum DocumentStatus {
+  uploading
+  processing
+  ready
+  error
 }

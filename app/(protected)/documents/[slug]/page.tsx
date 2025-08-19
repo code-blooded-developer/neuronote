@@ -49,8 +49,8 @@ export default function DocumentViewer({
     }
 
     if (
-      document.mimeType === "application/msword" ||
-      document.mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      document.mimeType ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     ) {
       return (
         <iframe
