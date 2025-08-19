@@ -61,7 +61,7 @@ export async function getUserDocuments() {
       deletedAt: null,
     },
     orderBy: { createdAt: "desc" },
-  })
+  });
 
   const docsWithUrls = await Promise.all(
     docs.map(async (doc) => {
@@ -69,16 +69,16 @@ export async function getUserDocuments() {
         .from("documents")
         .createSignedUrl(doc.storagePath, 60 * 60);
 
-      if (error) throw error
+      if (error) throw error;
 
       return {
         ...doc,
         url: data.signedUrl,
-      }
+      };
     })
-  )
+  );
 
-  return docsWithUrls
+  return docsWithUrls;
 }
 
 export async function toggleStar(documentId: string) {
@@ -106,3 +106,28 @@ export async function softDeleteDocument(documentId: string) {
   });
 }
 
+export async function getSignedUrl(documentId: string) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+  const userId = session.user.id;
+
+  // Fetch document from DB
+  const document = await prisma.document.findUnique({
+    where: { id: documentId, userId },
+  });
+
+  if (!document) {
+    throw new Error("Document not found or you don't have access");
+  }
+
+  // Generate signed URL for download/view
+  const { data, error } = await supabase.storage
+    .from("documents")
+    .createSignedUrl(document.storagePath, 60 * 60); // 1 hour
+
+  if (error || !data?.signedUrl) {
+    throw new Error(error?.message || "Failed to create signed URL");
+  }
+
+  return data.signedUrl;
+}
