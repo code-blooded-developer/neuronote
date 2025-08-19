@@ -80,3 +80,29 @@ export async function getUserDocuments() {
 
   return docsWithUrls
 }
+
+export async function toggleStar(documentId: string) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const doc = await prisma.document.findFirst({
+    where: { id: documentId, userId: session.user.id, deletedAt: null },
+  });
+  if (!doc) throw new Error("Document not found");
+
+  return prisma.document.update({
+    where: { id: documentId },
+    data: { isStarred: !doc.isStarred },
+  });
+}
+
+export async function softDeleteDocument(documentId: string) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+  const userId = session.user.id;
+  return prisma.document.updateMany({
+    where: { id: documentId, userId, deletedAt: null },
+    data: { deletedAt: new Date() },
+  });
+}
+

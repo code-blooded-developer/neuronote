@@ -53,6 +53,8 @@ import {
   getSignedUploadUrl,
   createDocumentEntry,
   getUserDocuments,
+  toggleStar,
+  softDeleteDocument
 } from "@/app/(protected)/actions/document";
 
 import { useProgress } from "@bprogress/next";
@@ -121,6 +123,58 @@ export default function DocumentsPage() {
 
     fetchDocuments();
   }, [start, stop, toast]);
+
+  const toggleDocumentStar = async (documentId: string) => {
+    try {
+      start();
+      await toggleStar(documentId);
+      setDocuments((prev) =>
+        prev.map((doc) =>
+          doc.id === documentId ? { ...doc, isStarred: !doc.isStarred } : doc
+        )
+      );
+      toast({
+        title: "Success",
+        description: "Document star status updated.",
+      });
+    } catch (error) {
+      console.error("Failed to toggle star:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update document star status.",
+        variant: "destructive",
+      });
+    } finally {
+      stop();
+    }
+  };
+
+  const downloadDocument = (url: string) => {
+    window.open(url, "_blank");
+  };
+
+  const deleteDocument = async (documentId: string) => {
+    try {
+      start();
+      await softDeleteDocument(documentId);
+      setDocuments((prev) =>
+        prev.filter((doc) => doc.id !== documentId)
+      );
+      toast({
+        title: "Success",
+        description: "Document deleted successfully.",
+      });
+    } catch (error) {
+      console.error("Failed to delete document:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete document.",
+        variant: "destructive",
+      });
+    } finally {
+      stop();
+    }
+  };
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes";
@@ -327,11 +381,11 @@ export default function DocumentsPage() {
                     <Eye className="mr-2 h-4 w-4" />
                     View
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => downloadDocument(doc.url)}>
                     <Download className="mr-2 h-4 w-4" />
                     Download
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => toggleDocumentStar(doc.id)}>
                     <Star
                       className={`mr-2 h-4 w-4 ${
                         doc.isStarred ? "fill-current text-yellow-500" : ""
@@ -340,7 +394,7 @@ export default function DocumentsPage() {
                     {doc.isStarred ? "Unstar" : "Star"}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive">
+                  <DropdownMenuItem className="text-destructive cursor-pointer" onClick={() => deleteDocument(doc.id)}>
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete
                   </DropdownMenuItem>
@@ -416,11 +470,11 @@ export default function DocumentsPage() {
                     <Eye className="mr-2 h-4 w-4" />
                     View
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => downloadDocument(doc.url)}>
                     <Download className="mr-2 h-4 w-4" />
                     Download
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => toggleDocumentStar(doc.id)}>
                     <Star
                       className={`mr-2 h-4 w-4 ${
                         doc.isStarred ? "fill-current text-yellow-500" : ""
@@ -429,7 +483,7 @@ export default function DocumentsPage() {
                     {doc.isStarred ? "Unstar" : "Star"}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive">
+                  <DropdownMenuItem className="text-destructive cursor-pointer" onClick={() => deleteDocument(doc.id)}>
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete
                   </DropdownMenuItem>
