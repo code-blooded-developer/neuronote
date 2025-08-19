@@ -48,31 +48,19 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { useDropzone } from "react-dropzone";
 import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 import {
   getSignedUploadUrl,
   createDocumentEntry,
   getUserDocuments,
   toggleStar,
-  softDeleteDocument
+  softDeleteDocument,
 } from "@/app/(protected)/actions/document";
 
 import { useProgress } from "@bprogress/next";
 
-interface Document {
-  url: string;
-  id: string;
-  status: string | null;
-  createdAt: Date;
-  userId: string;
-  fileName: string;
-  description: string | null;
-  storagePath: string;
-  mimeType: string;
-  size: number;
-  isStarred: boolean;
-  deletedAt: Date | null;
-}
+import { Document } from "@/lib/validation";
 
 interface UploadStatus {
   id: string;
@@ -93,6 +81,7 @@ export default function DocumentsPage() {
   const [uploadQueue, setUploadQueue] = useState<UploadStatus[]>([]);
   const { toast } = useToast();
   const { start, stop } = useProgress();
+  const router = useRouter();
 
   useEffect(() => {
     // Fetch user documents on mount
@@ -157,9 +146,7 @@ export default function DocumentsPage() {
     try {
       start();
       await softDeleteDocument(documentId);
-      setDocuments((prev) =>
-        prev.filter((doc) => doc.id !== documentId)
-      );
+      setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
       toast({
         title: "Success",
         description: "Document deleted successfully.",
@@ -176,6 +163,10 @@ export default function DocumentsPage() {
     }
   };
 
+  const goToDocumentViewer = (slug: string) => {
+    router.push(`/documents/${slug}`);
+  };
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes";
     const k = 1024;
@@ -184,7 +175,7 @@ export default function DocumentsPage() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop: async (acceptedFiles) => {
       const file = acceptedFiles[0];
       if (!file) return;
@@ -308,8 +299,8 @@ export default function DocumentsPage() {
     switch (type.toLowerCase()) {
       case "application/pdf":
         return <FileText className="h-8 w-8 text-red-500" />;
-      case "application/docx":
-      case "application/doc":
+      case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      case "application/msword":
         return <FileText className="h-8 w-8 text-blue-500" />;
       default:
         return <File className="h-8 w-8 text-gray-500" />;
@@ -352,6 +343,7 @@ export default function DocumentsPage() {
         <Card
           key={doc.id}
           className="hover:shadow-lg transition-shadow cursor-pointer group"
+          onClick={() => goToDocumentViewer(doc.id)}
         >
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between gap-2">
@@ -377,15 +369,24 @@ export default function DocumentsPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => goToDocumentViewer(doc.id)}
+                  >
                     <Eye className="mr-2 h-4 w-4" />
                     View
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer" onClick={() => downloadDocument(doc.url)}>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => downloadDocument(doc.url)}
+                  >
                     <Download className="mr-2 h-4 w-4" />
                     Download
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer" onClick={() => toggleDocumentStar(doc.id)}>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => toggleDocumentStar(doc.id)}
+                  >
                     <Star
                       className={`mr-2 h-4 w-4 ${
                         doc.isStarred ? "fill-current text-yellow-500" : ""
@@ -394,7 +395,10 @@ export default function DocumentsPage() {
                     {doc.isStarred ? "Unstar" : "Star"}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive cursor-pointer" onClick={() => deleteDocument(doc.id)}>
+                  <DropdownMenuItem
+                    className="text-destructive cursor-pointer"
+                    onClick={() => deleteDocument(doc.id)}
+                  >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete
                   </DropdownMenuItem>
@@ -435,7 +439,11 @@ export default function DocumentsPage() {
   const ListView = () => (
     <div className="space-y-2">
       {filteredDocuments.map((doc) => (
-        <Card key={doc.id} className="hover:shadow-md transition-shadow">
+        <Card
+          key={doc.id}
+          className="hover:shadow-md transition-shadow cursor-pointer"
+          onClick={() => goToDocumentViewer(doc.id)}
+        >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -466,15 +474,24 @@ export default function DocumentsPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => goToDocumentViewer(doc.id)}
+                  >
                     <Eye className="mr-2 h-4 w-4" />
                     View
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer" onClick={() => downloadDocument(doc.url)}>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => downloadDocument(doc.url)}
+                  >
                     <Download className="mr-2 h-4 w-4" />
                     Download
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer" onClick={() => toggleDocumentStar(doc.id)}>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => toggleDocumentStar(doc.id)}
+                  >
                     <Star
                       className={`mr-2 h-4 w-4 ${
                         doc.isStarred ? "fill-current text-yellow-500" : ""
@@ -483,7 +500,10 @@ export default function DocumentsPage() {
                     {doc.isStarred ? "Unstar" : "Star"}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive cursor-pointer" onClick={() => deleteDocument(doc.id)}>
+                  <DropdownMenuItem
+                    className="text-destructive cursor-pointer"
+                    onClick={() => deleteDocument(doc.id)}
+                  >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete
                   </DropdownMenuItem>
@@ -700,13 +720,10 @@ export default function DocumentsPage() {
                   ? "Try adjusting your search terms"
                   : "Upload your first document to get started"}
               </p>
-              <div {...getRootProps()}>
-                <input {...getInputProps()} />
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Upload Document
-                </Button>
-              </div>
+              <Button onClick={open} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Upload Document
+              </Button>
             </CardContent>
           </Card>
         ) : (

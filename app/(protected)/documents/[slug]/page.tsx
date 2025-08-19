@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useContext } from "react";
 
-import { getSignedUrl } from "@/app/(protected)/actions/document";
+import { getDocumentWithUrl } from "@/app/(protected)/actions/document";
+import { LayoutContext } from "../../layout";
+
+import { Document } from "@/lib/validation";
 
 export default function DocumentViewer({
   params,
@@ -10,19 +13,55 @@ export default function DocumentViewer({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = use(params);
-  const [url, setUrl] = useState<string>("");
+  const [document, setDocument] = useState<Document>();
+  const { setLayoutData } = useContext(LayoutContext);
 
   useEffect(() => {
     const fetchDocument = async () => {
-      const url = await getSignedUrl(slug);
-      setUrl(url);
+      const document = await getDocumentWithUrl(slug);
+      setDocument(document);
+      setLayoutData({
+        title: document.fileName,
+        isStarred: document.isStarred,
+        showHeader: true,
+      });
     };
     fetchDocument();
-  }, [slug]);
+    return () => setLayoutData({});
+  }, [slug, setLayoutData]);
 
-  if (!url) {
-    return <p>Loading document...</p>;
+  if (!document) {
+    return <p>Loading...</p>;
   }
 
-  return <iframe src={url} className="w-full h-[90vh] border rounded"></iframe>;
+  if (document) {
+    if (
+      document.mimeType === "application/pdf" ||
+      document.mimeType === "text/plain"
+    ) {
+      return (
+        <iframe
+          src={document.url}
+          className="w-full h-[90vh] border rounded"
+          title={document.fileName}
+        />
+      );
+    }
+
+    if (
+      document.mimeType === "application/msword" ||
+      document.mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ) {
+      return (
+        <iframe
+          src={`https://docs.google.com/gview?url=${encodeURIComponent(
+            document.url
+          )}&embedded=true`}
+          className="w-full h-[90vh] border rounded"
+        />
+      );
+    }
+  }
+
+  return <p>Unsupported file type</p>;
 }

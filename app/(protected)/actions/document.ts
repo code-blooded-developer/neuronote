@@ -106,28 +106,22 @@ export async function softDeleteDocument(documentId: string) {
   });
 }
 
-export async function getSignedUrl(documentId: string) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
-  const userId = session.user.id;
 
-  // Fetch document from DB
-  const document = await prisma.document.findUnique({
-    where: { id: documentId, userId },
+export async function getDocumentWithUrl(documentId: string) {
+  const doc = await prisma.document.findUnique({
+    where: { id: documentId },
   });
 
-  if (!document) {
-    throw new Error("Document not found or you don't have access");
-  }
+  if (!doc) throw new Error("Document not found");
 
-  // Generate signed URL for download/view
   const { data, error } = await supabase.storage
     .from("documents")
-    .createSignedUrl(document.storagePath, 60 * 60); // 1 hour
+    .createSignedUrl(doc.storagePath, 60 * 60); // 1 hour
 
-  if (error || !data?.signedUrl) {
-    throw new Error(error?.message || "Failed to create signed URL");
-  }
+  if (error || !data) throw error ?? new Error("Failed to generate signed URL");
 
-  return data.signedUrl;
+  return {
+    ...doc,
+    url: data.signedUrl,
+  };
 }
