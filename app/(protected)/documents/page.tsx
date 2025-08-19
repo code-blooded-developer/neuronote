@@ -30,7 +30,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -58,16 +58,18 @@ import {
 import { useProgress } from "@bprogress/next";
 
 interface Document {
-  id: number;
-  name: string;
-  type: string;
-  size: string;
-  uploadedAt: string;
-  collection: string;
-  starred: boolean;
-  tags: string[];
-  lastModified: string;
-  author: string;
+  url: string;
+  id: string;
+  status: string | null;
+  createdAt: Date;
+  userId: string;
+  fileName: string;
+  description: string | null;
+  storagePath: string;
+  mimeType: string;
+  size: number;
+  isStarred: boolean;
+  deletedAt: Date | null;
 }
 
 interface UploadStatus {
@@ -80,82 +82,8 @@ interface UploadStatus {
   error?: string;
 }
 
-const mockDocuments: Document[] = [
-  {
-    id: 1,
-    name: "Q4 Financial Report.pdf",
-    type: "pdf",
-    size: "2.3 MB",
-    uploadedAt: "2 hours ago",
-    collection: "Financial Reports",
-    starred: true,
-    tags: ["finance", "quarterly", "report"],
-    lastModified: "2024-01-15",
-    author: "John Smith",
-  },
-  {
-    id: 2,
-    name: "User Research Findings.docx",
-    type: "docx",
-    size: "1.8 MB",
-    uploadedAt: "1 day ago",
-    collection: "Research",
-    starred: false,
-    tags: ["research", "users", "analysis"],
-    lastModified: "2024-01-14",
-    author: "Sarah Johnson",
-  },
-  {
-    id: 3,
-    name: "Product Roadmap 2024.xlsx",
-    type: "xlsx",
-    size: "3.1 MB",
-    uploadedAt: "3 days ago",
-    collection: "Product",
-    starred: true,
-    tags: ["product", "roadmap", "planning"],
-    lastModified: "2024-01-12",
-    author: "Mike Chen",
-  },
-  {
-    id: 4,
-    name: "Meeting Notes.txt",
-    type: "txt",
-    size: "24 KB",
-    uploadedAt: "1 week ago",
-    collection: "Meetings",
-    starred: false,
-    tags: ["meeting", "notes"],
-    lastModified: "2024-01-08",
-    author: "Alex Kim",
-  },
-  {
-    id: 5,
-    name: "Brand Guidelines.pdf",
-    type: "pdf",
-    size: "5.2 MB",
-    uploadedAt: "2 weeks ago",
-    collection: "Design",
-    starred: true,
-    tags: ["brand", "design", "guidelines"],
-    lastModified: "2024-01-01",
-    author: "Emma Davis",
-  },
-  {
-    id: 6,
-    name: "API Documentation.md",
-    type: "md",
-    size: "156 KB",
-    uploadedAt: "1 month ago",
-    collection: "Development",
-    starred: false,
-    tags: ["api", "documentation", "development"],
-    lastModified: "2023-12-15",
-    author: "David Wilson",
-  },
-];
-
 export default function DocumentsPage() {
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -170,7 +98,14 @@ export default function DocumentsPage() {
       try {
          start();
         const documents = await getUserDocuments();
-        console.log("Fetched documents:", documents);
+        
+        setDocuments(documents);
+        if (documents.length === 0) {
+          toast({
+            title: "No documents found",
+            description: "You have no documents yet. Upload your first document.",
+          });
+        }
       } catch (error) {
         console.error("Failed to fetch documents:", error);
         toast({
@@ -316,10 +251,10 @@ export default function DocumentsPage() {
 
   const getFileIcon = (type: string) => {
     switch (type.toLowerCase()) {
-      case "pdf":
+      case "application/pdf":
         return <FileText className="h-8 w-8 text-red-500" />;
-      case "docx":
-      case "doc":
+      case "application/docx":
+      case "application/doc":
         return <FileText className="h-8 w-8 text-blue-500" />;
       default:
         return <File className="h-8 w-8 text-gray-500" />;
@@ -329,16 +264,16 @@ export default function DocumentsPage() {
   const sortDocuments = (documents: Document[]) => {
     switch (sortBy) {
       case "name":
-        return [...documents].sort((a, b) => a.name.localeCompare(b.name));
+        return [...documents].sort((a, b) => a.fileName.localeCompare(b.fileName));
       case "size":
         return [...documents].sort(
-          (a, b) => parseFloat(a.size) - parseFloat(b.size)
+          (a, b) => a.size - b.size
         );
       case "recent":
         return [...documents].sort(
           (a, b) =>
-            new Date(b.lastModified).getTime() -
-            new Date(a.lastModified).getTime()
+            new Date(b.createdAt).getTime() -
+            new Date(a.createdAt).getTime()
         );
       default:
         return documents;
@@ -346,16 +281,12 @@ export default function DocumentsPage() {
   };
 
   const filteredDocuments = sortDocuments(
-    mockDocuments.filter((doc) => {
+    documents.filter((doc) => {
       const matchesSearch =
-        doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.tags.some((tag) =>
-          tag.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+        doc.fileName.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesFilter =
         selectedFilter === "all" ||
-        (selectedFilter === "starred" && doc.starred) ||
-        doc.collection.toLowerCase() === selectedFilter.toLowerCase();
+        (selectedFilter === "starred" && doc.isStarred);
       return matchesSearch && matchesFilter;
     })
   );
@@ -370,13 +301,13 @@ export default function DocumentsPage() {
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                {getFileIcon(doc.type)}
+                {getFileIcon(doc.mimeType)}
                 <div className="flex-1 min-w-0">
                   <CardTitle className="text-sm font-medium truncate">
-                    {doc.name}
+                    {doc.fileName}
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    {doc.size}
+                    {formatFileSize(doc.size)}
                   </CardDescription>
                 </div>
               </div>
@@ -402,10 +333,10 @@ export default function DocumentsPage() {
                   <DropdownMenuItem>
                     <Star
                       className={`mr-2 h-4 w-4 ${
-                        doc.starred ? "fill-current text-yellow-500" : ""
+                        doc.isStarred ? "fill-current text-yellow-500" : ""
                       }`}
                     />
-                    {doc.starred ? "Unstar" : "Star"}
+                    {doc.isStarred ? "Unstar" : "Star"}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-destructive">
@@ -418,7 +349,7 @@ export default function DocumentsPage() {
           </CardHeader>
           <CardContent className="pt-0">
             <div className="space-y-2">
-              <Badge variant="secondary" className="text-xs">
+              {/* <Badge variant="secondary" className="text-xs">
                 {doc.collection}
               </Badge>
               <div className="flex flex-wrap gap-1">
@@ -432,10 +363,10 @@ export default function DocumentsPage() {
                     +{doc.tags.length - 2}
                   </Badge>
                 )}
-              </div>
+              </div> */}
               <div className="text-xs text-muted-foreground">
-                <p>By {doc.author}</p>
-                <p>Modified {doc.lastModified}</p>
+                {/* <p>By {doc.author}</p> */}
+                <p>Created {new Date(doc.createdAt).toLocaleDateString('en')}</p>
               </div>
             </div>
           </CardContent>
@@ -451,23 +382,23 @@ export default function DocumentsPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4 flex-1 min-w-0">
-                {getFileIcon(doc.type)}
+                {getFileIcon(doc.mimeType)}
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-medium truncate">{doc.name}</h3>
+                  <h3 className="font-medium truncate">{doc.fileName}</h3>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>{doc.size}</span>
+                    <span>{formatFileSize(doc.size)}</span>
                     <span>•</span>
-                    <span>By {doc.author}</span>
-                    <span>•</span>
-                    <span>Modified {doc.lastModified}</span>
+                    {/* <span>By {doc.author}</span>
+                    <span>•</span> */}
+                    <span>Created {new Date(doc.createdAt).toLocaleDateString('en')}</span>
                   </div>
                 </div>
-                <div className="hidden md:flex items-center gap-2">
+                {/* <div className="hidden md:flex items-center gap-2">
                   <Badge variant="secondary">{doc.collection}</Badge>
-                  {doc.starred && (
+                  {doc.isStarred && (
                     <Star className="h-4 w-4 fill-current text-yellow-500" />
                   )}
-                </div>
+                </div> */}
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -487,10 +418,10 @@ export default function DocumentsPage() {
                   <DropdownMenuItem>
                     <Star
                       className={`mr-2 h-4 w-4 ${
-                        doc.starred ? "fill-current text-yellow-500" : ""
+                        doc.isStarred ? "fill-current text-yellow-500" : ""
                       }`}
                     />
-                    {doc.starred ? "Unstar" : "Star"}
+                    {doc.isStarred ? "Unstar" : "Star"}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-destructive">
@@ -649,7 +580,7 @@ export default function DocumentsPage() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search documents, tags, or collections..."
+              placeholder="Search documents..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -664,14 +595,6 @@ export default function DocumentsPage() {
               <SelectContent>
                 <SelectItem value="all">All Documents</SelectItem>
                 <SelectItem value="starred">Starred</SelectItem>
-                <SelectItem value="financial reports">
-                  Financial Reports
-                </SelectItem>
-                <SelectItem value="research">Research</SelectItem>
-                <SelectItem value="product">Product</SelectItem>
-                <SelectItem value="meetings">Meetings</SelectItem>
-                <SelectItem value="design">Design</SelectItem>
-                <SelectItem value="development">Development</SelectItem>
               </SelectContent>
             </Select>
 
