@@ -9,6 +9,7 @@ import { DocumentStatus } from "@prisma/client";
 import { Document } from "@/lib/validation";
 import { parseDocument } from "@/lib/parseDocument";
 import { splitTextWithLangchain } from "@/lib/chunkText";
+import { getEmbeddings } from "@/lib/embedChunks";
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -132,12 +133,15 @@ export async function parseAndStoreChunks(doc: Omit<Document, "url">) {
 
     const chunks = await splitTextWithLangchain(text);
 
+    const embeddings = await getEmbeddings(chunks);
+
     await prisma.$transaction(
-      chunks.map((chunk) =>
+      chunks.map((chunk, i) =>
         prisma.documentChunk.create({
           data: {
             documentId: doc.id,
             content: chunk,
+            embedding: embeddings[i],
           },
         })
       )

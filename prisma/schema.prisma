@@ -110,6 +110,7 @@ model DocumentChunk {
   documentId String
   document   Document @relation(fields: [documentId], references: [id])
   content    String   // text chunk
+  embedding  Float[]
   createdAt  DateTime @default(now())
 }
 
