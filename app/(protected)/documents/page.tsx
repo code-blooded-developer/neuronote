@@ -19,6 +19,7 @@ import {
   XCircle,
   Loader2,
   X,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +61,7 @@ import {
 import { useProgress } from "@bprogress/next";
 
 import { Document } from "@/lib/validation";
+import { Badge } from "@/components/ui/badge";
 
 import { DocumentStatus } from "@prisma/client";
 
@@ -338,6 +340,51 @@ export default function DocumentsPage() {
     })
   );
 
+  const getStatusBadge = (status: DocumentStatus) => {
+    switch (status) {
+      case DocumentStatus.uploading:
+        return (
+          <Badge
+            variant="secondary"
+            className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+          >
+            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            Uploading
+          </Badge>
+        );
+      case DocumentStatus.processing:
+        return (
+          <Badge
+            variant="secondary"
+            className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300"
+          >
+            <Clock className="h-3 w-3 mr-1" />
+            Processing
+          </Badge>
+        );
+      case DocumentStatus.ready:
+        return (
+          <Badge
+            variant="secondary"
+            className="text-xs bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+          >
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Ready
+          </Badge>
+        );
+      case DocumentStatus.error:
+        return (
+          <Badge
+            variant="secondary"
+            className="text-xs bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+          >
+            <XCircle className="h-3 w-3 mr-1" />
+            Error
+          </Badge>
+        );
+    }
+  };
+
   const GridView = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {filteredDocuments.map((doc) => (
@@ -409,6 +456,7 @@ export default function DocumentsPage() {
           </CardHeader>
           <CardContent className="pt-0">
             <div className="space-y-2">
+              {getStatusBadge(doc.status)}
               {/* <Badge variant="secondary" className="text-xs">
                 {doc.collection}
               </Badge>
@@ -461,12 +509,13 @@ export default function DocumentsPage() {
                     </span>
                   </div>
                 </div>
-                {/* <div className="hidden md:flex items-center gap-2">
-                  <Badge variant="secondary">{doc.collection}</Badge>
+                <div className="hidden md:flex items-center gap-2">
+                  {getStatusBadge(doc.status)}
+                  {/* <Badge variant="secondary">{doc.collection}</Badge>
                   {doc.isStarred && (
                     <Star className="h-4 w-4 fill-current text-yellow-500" />
-                  )}
-                </div> */}
+                  )} */}
+                </div>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
