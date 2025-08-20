@@ -136,14 +136,14 @@ export async function parseAndStoreChunks(doc: Omit<Document, "url">) {
     const embeddings = await getDocEmbeddings(chunks);
 
     await prisma.$transaction(
-      chunks.map((chunk, i) =>
-        prisma.documentChunk.create({
-          data: {
-            documentId: doc.id,
-            content: chunk,
-            embedding: embeddings[i],
-          },
-        })
+      chunks.map(
+        (chunk, i) =>
+          prisma.$executeRaw`
+      INSERT INTO "DocumentChunk" ("id", "documentId", "content", "embedding", "createdAt")
+      VALUES (${crypto.randomUUID()}, ${doc.id}, ${chunk}, ${
+            embeddings[i]
+          }, NOW())
+    `
       )
     );
 

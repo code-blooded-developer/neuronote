@@ -13,15 +13,16 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  passwordHash  String?   // null for OAuth users
+  passwordHash  String? // null for OAuth users
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   accounts Account[]
   sessions Session[]
 
-  documents     Document[]
-  documentTags  DocumentTag[]
+  documents    Document[]
+  documentTags DocumentTag[]
+  Chat         Chat[]
 }
 
 model Account {
@@ -60,44 +61,44 @@ model VerificationToken {
 }
 
 model PasswordResetToken {
-  id         String   @id @default(cuid())
-  email      String   @unique
-  token      String   @unique
-  expires    DateTime
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  email     String   @unique
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
 }
 
 model Document {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id])
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
-  fileName     String
-  description  String? 
-  storagePath  String
-  mimeType     String
-  size         Int
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime? @updatedAt
-  status       DocumentStatus  @default(uploading)
+  fileName    String
+  description String?
+  storagePath String
+  mimeType    String
+  size        Int
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime?      @updatedAt
+  status      DocumentStatus @default(uploading)
 
-  isStarred    Boolean  @default(false)
-  deletedAt    DateTime?
+  isStarred Boolean   @default(false)
+  deletedAt DateTime?
 
-  tags         DocumentTag[] @relation("DocumentTags")
-  chunks       DocumentChunk[]
+  tags   DocumentTag[]   @relation("DocumentTags")
+  chunks DocumentChunk[]
 
-  @@index([userId, createdAt])
   @@unique([userId, storagePath])
+  @@index([userId, createdAt])
 }
 
 model DocumentTag {
-  id        String   @id @default(cuid())
-  name      String
-  color     String? // optional, for UI highlighting
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  
+  id     String  @id @default(cuid())
+  name   String
+  color  String? // optional, for UI highlighting
+  userId String
+  user   User    @relation(fields: [userId], references: [id])
+
   documents Document[] @relation("DocumentTags")
 
   createdAt DateTime @default(now())
@@ -106,12 +107,12 @@ model DocumentTag {
 }
 
 model DocumentChunk {
-  id         String   @id @default(cuid())
+  id         String                @id @default(cuid())
   documentId String
-  document   Document @relation(fields: [documentId], references: [id])
-  content    String   // text chunk
+  document   Document              @relation(fields: [documentId], references: [id])
+  content    String // text chunk
   embedding  Unsupported("vector")
-  createdAt  DateTime @default(now())
+  createdAt  DateTime              @default(now())
 }
 
 enum DocumentStatus {
@@ -119,4 +120,31 @@ enum DocumentStatus {
   processing
   ready
   error
+}
+
+model Chat {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  title     String? // you can generate from first user query
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages Message[]
+}
+
+model Message {
+  id     String @id @default(cuid())
+  chatId String
+  chat   Chat   @relation(fields: [chatId], references: [id])
+
+  role      MessageRole // "user" or "assistant"
+  content   String
+  createdAt DateTime    @default(now())
+}
+
+enum MessageRole {
+  user
+  assistant
 }

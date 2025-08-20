@@ -19,3 +19,19 @@ export async function getDocEmbeddings(texts: string[]): Promise<number[][]> {
     return [];
   }
 }
+
+export async function getQueryEmbeddings(query: string): Promise<number[]> {
+  try {
+    const response = await cohere.v2.embed({
+      texts: [query],
+      model: "embed-v4.0",
+      inputType: "search_query",
+      embeddingTypes: ["float"],
+    });
+
+    return response.embeddings.float?.[0] || [];
+  } catch (err) {
+    console.error("Cohere query embedding error:", err);
+    return [];
+  }
+}
