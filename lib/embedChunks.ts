@@ -4,7 +4,7 @@ const cohere = new CohereClient({
   token: process.env.COHERE_API_KEY!,
 });
 
-export async function getEmbeddings(texts: string[]): Promise<number[][]> {
+export async function getDocEmbeddings(texts: string[]): Promise<number[][]> {
   try {
     const response = await cohere.v2.embed({
       texts,
