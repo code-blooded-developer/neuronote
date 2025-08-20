@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/auth";
 
-const protectedRoutes = ["/dashboard", "/profile"]; // pages that require login
-const unprotectedRoutes = ["/", "/auth/signin", "/auth/signup"]; // pages for guests only
+const protectedRoutes = ["/dashboard", "/documents"]; // pages that require login
+const unprotectedRoutes = [
+  "/",
+  "/auth/signin",
+  "/auth/signup",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+]; // pages for guests only
 
 export default async function middleware(req: NextRequest) {
   const session = await auth();
