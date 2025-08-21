@@ -131,6 +131,7 @@ function DocumentActions({
       <DropdownMenuContent align="end">
         <DropdownMenuItem
           className="cursor-pointer"
+          disabled={doc.status !== DocumentStatus.ready}
           onSelect={(e) => {
             e.preventDefault();
             goToDocumentViewer(doc.id);
@@ -142,6 +143,7 @@ function DocumentActions({
 
         <DropdownMenuItem
           className="cursor-pointer"
+          disabled={doc.status !== DocumentStatus.ready}
           onSelect={(e) => {
             e.preventDefault();
             downloadDocument(doc.url);
@@ -195,7 +197,11 @@ export function GridView({
         <Card
           key={doc.id}
           className="hover:shadow-lg transition-shadow cursor-pointer group"
-          onClick={() => goToDocumentViewer(doc.id)}
+          onClick={() => {
+            if (doc.status === DocumentStatus.ready) {
+              goToDocumentViewer(doc.id);
+            }
+          }}
         >
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between gap-2">
@@ -263,7 +269,11 @@ export function ListView({
         <Card
           key={doc.id}
           className="hover:shadow-md transition-shadow cursor-pointer"
-          onClick={() => goToDocumentViewer(doc.id)}
+          onClick={() => {
+            if (doc.status === DocumentStatus.ready) {
+              goToDocumentViewer(doc.id);
+            }
+          }}
         >
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
