@@ -1,6 +1,12 @@
 "use client";
 
-import { useActionState, useState, use, useEffect } from "react";
+import { use, useActionState, useEffect, useState } from "react";
+
+import Link from "next/link";
+import { redirect } from "next/navigation";
+
+import { AlertCircle, CheckCircle, Eye, EyeOff, KeyRound } from "lucide-react";
+
 import { resetPasswordAction } from "@/app/auth/actions";
 
 import { Button } from "@/components/ui/button";
@@ -13,9 +19,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, KeyRound, AlertCircle, CheckCircle } from "lucide-react";
-import Link from "next/link";
-import { redirect } from "next/navigation";
 
 export default function ResetPasswordPage({
   searchParams,

@@ -1,15 +1,20 @@
 "use client";
 
 import { useCallback } from "react";
-import { useDropzone } from "react-dropzone";
-import { toast } from "@/components/ui/use-toast";
+
 import { DocumentStatus } from "@prisma/client";
-import { UploadStatus, DocumentWithUrl } from "@/types/document";
+import { useDropzone } from "react-dropzone";
+
 import {
-  getSignedUploadUrl,
   createDocumentEntry,
+  getSignedUploadUrl,
 } from "@/app/(protected)/actions/document";
+
+import { toast } from "@/components/ui/use-toast";
+
 import { formatFileSize } from "@/lib/utils";
+
+import { DocumentWithUrl, UploadStatus } from "@/types/document";
 
 export function useDocumentUploader({
   setDocuments,

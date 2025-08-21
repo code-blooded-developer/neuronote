@@ -1,21 +1,30 @@
 "use client";
 
 import { useState } from "react";
+
+import { useProgress } from "@bprogress/next";
+import { DocumentStatus } from "@prisma/client";
 import {
-  Search,
-  Upload,
+  CheckCircle,
+  FileText,
   Filter,
   Grid,
   List,
-  FileText,
-  Plus,
-  CheckCircle,
-  XCircle,
   Loader2,
+  Plus,
+  Search,
+  Upload,
   X,
+  XCircle,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+import {
+  softDeleteDocument,
+  toggleStar,
+} from "@/app/(protected)/actions/document";
+
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -23,6 +32,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -30,24 +41,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
+
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
-
-import {
-  toggleStar,
-  softDeleteDocument,
-} from "@/app/(protected)/actions/document";
-
-import { useProgress } from "@bprogress/next";
-
-import { DocumentStatus } from "@prisma/client";
+import { useDocumentUploader } from "@/hooks/useDocumentUploader";
 
 import { DocumentWithUrl, UploadStatus } from "@/types/document";
 
 import { GridView, ListView } from "./DocumentsView";
-
-import { useDocumentUploader } from "@/hooks/useDocumentUploader";
 
 export default function DocumentsClient({
   initialDocuments,

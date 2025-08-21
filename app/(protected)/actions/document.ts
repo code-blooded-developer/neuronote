@@ -1,15 +1,16 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
 import { auth } from "@/auth";
-import prisma from "@/lib/prisma";
-import { randomUUID } from "crypto";
 import { DocumentStatus } from "@prisma/client";
+import { createClient } from "@supabase/supabase-js";
+import { randomUUID } from "crypto";
 
-import { Document } from "@/types/document";
-import { parseDocument } from "@/lib/parsing";
 import { splitTextWithLangchain } from "@/lib/chunking";
 import { getDocEmbeddings } from "@/lib/embedding";
+import { parseDocument } from "@/lib/parsing";
+import prisma from "@/lib/prisma";
+
+import { Document } from "@/types/document";
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -141,8 +142,8 @@ export async function parseAndStoreChunks(doc: Omit<Document, "url">) {
           prisma.$executeRaw`
       INSERT INTO "DocumentChunk" ("id", "documentId", "content", "embedding", "createdAt")
       VALUES (${crypto.randomUUID()}, ${doc.id}, ${chunk}, ${
-            embeddings[i]
-          }, NOW())
+        embeddings[i]
+      }, NOW())
     `
       )
     );

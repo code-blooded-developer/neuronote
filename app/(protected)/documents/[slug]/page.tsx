@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, use, useContext } from "react";
+import { use, useContext, useEffect, useState } from "react";
 
 import { getDocumentWithUrl } from "@/app/(protected)/actions/document";
-import { LayoutContext } from "../../layout";
 
-import { Document } from "@/types/document";
+import { DocumentWithUrl } from "@/types/document";
+
+import { LayoutContext } from "../../layout";
 
 export default function DocumentViewer({
   params,
@@ -13,7 +14,7 @@ export default function DocumentViewer({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = use(params);
-  const [document, setDocument] = useState<Document>();
+  const [document, setDocument] = useState<DocumentWithUrl>();
   const { setLayoutData } = useContext(LayoutContext);
 
   useEffect(() => {

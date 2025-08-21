@@ -1,10 +1,20 @@
+import { DocumentStatus } from "@prisma/client";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  CheckCircle,
+  Clock,
+  Download,
+  Eye,
+  File,
+  FileText,
+  Loader2,
+  MoreHorizontal,
+  Star,
+  Trash2,
+  XCircle,
+} from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -13,26 +23,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Star,
-  Download,
-  Eye,
-  Trash2,
-  FileText,
-  File,
-  MoreHorizontal,
-  CheckCircle,
-  XCircle,
-  Loader2,
-  Clock,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-
-import type { DocumentWithUrl } from "@/types/document";
-
-import { DocumentStatus } from "@prisma/client";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { formatFileSize } from "@/lib/utils";
+
+import type { DocumentWithUrl } from "@/types/document";
 
 interface DocumentViewProps {
   documents: DocumentWithUrl[];

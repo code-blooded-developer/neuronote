@@ -1,11 +1,12 @@
 "use client";
 
 import { createContext, useState } from "react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
+
 import { FileText, Star } from "lucide-react";
 
+import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 type LayoutData = {
   isChatPage?: boolean;

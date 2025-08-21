@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowLeft,Brain } from "lucide-react";
+
+import { ArrowLeft, Brain } from "lucide-react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 

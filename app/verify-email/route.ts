@@ -1,5 +1,6 @@
-import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+
+import { prisma } from "@/lib/prisma";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);

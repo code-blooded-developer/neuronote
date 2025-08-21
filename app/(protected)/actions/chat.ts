@@ -1,11 +1,11 @@
 "use server";
 
 import { auth } from "@/auth";
-import prisma from "@/lib/prisma";
-import { getQueryEmbeddings } from "@/lib/embedding";
-import { getChatResponse } from "@/lib/chat";
-
 import { MessageRole } from "@prisma/client";
+
+import { getChatResponse } from "@/lib/chat";
+import { getQueryEmbeddings } from "@/lib/embedding";
+import prisma from "@/lib/prisma";
 
 export async function queryDocuments(
   query: string,

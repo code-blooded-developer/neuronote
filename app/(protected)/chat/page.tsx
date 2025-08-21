@@ -1,11 +1,23 @@
 "use client";
 
-import { useState, useRef, useEffect, useContext } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
+
+import { Chat, Message, MessageRole } from "@prisma/client";
+import {
+  Bot,
+  FileText,
+  MessageSquare,
+  Plus,
+  Search,
+  Send,
+  User,
+  X,
+} from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -13,29 +25,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Send,
-  FileText,
-  Bot,
-  User,
-  X,
-  Plus,
-  MessageSquare,
-  Search,
-} from "lucide-react";
-
-import { LayoutContext } from "../layout";
-
-import { getUserReadyDocuments } from "../actions/document";
-
-import { queryDocuments, getUserChats, getChatMessages } from "../actions/chat";
-
-import { DocumentWithoutUrl as Document } from "@/types/document";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { formatFileSize } from "@/lib/utils";
 
-import { Chat, Message, MessageRole } from "@prisma/client";
+import { Document } from "@/types/document";
+
+import { getChatMessages, getUserChats, queryDocuments } from "../actions/chat";
+import { getUserReadyDocuments } from "../actions/document";
+import { LayoutContext } from "../layout";
 
 const AIChat = () => {
   const [documents, setDocuments] = useState<Document[]>([]);

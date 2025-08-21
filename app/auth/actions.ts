@@ -1,22 +1,22 @@
 "use server";
-import { CredentialsSignin } from "next-auth";
-import { hash, compare } from "bcryptjs";
-import crypto from "crypto";
-
-import prisma from "@/lib/prisma";
-import {
-  SignInFormState,
-  signInSchema,
-  SignUpFormState,
-  signUpSchema,
-  forgotPasswordSchema,
-  ForgotPasswordFormState,
-  resetPasswordSchema,
-  ResetPasswordFormState,
-} from "@/lib/validation";
-import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/mailer";
 
 import { signIn, signOut } from "@/auth";
+import { compare, hash } from "bcryptjs";
+import crypto from "crypto";
+import { CredentialsSignin } from "next-auth";
+
+import { sendPasswordResetEmail, sendVerificationEmail } from "@/lib/mailer";
+import prisma from "@/lib/prisma";
+import {
+  ForgotPasswordFormState,
+  ResetPasswordFormState,
+  SignInFormState,
+  SignUpFormState,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  signInSchema,
+  signUpSchema,
+} from "@/lib/validation";
 
 export async function signUpAction(
   _: SignUpFormState | undefined,
@@ -197,11 +197,14 @@ export async function resetPasswordAction(
     };
   }
 
-  const isSameAsOld = user.passwordHash && await compare(password, user.passwordHash);
+  const isSameAsOld =
+    user.passwordHash && (await compare(password, user.passwordHash));
   if (isSameAsOld) {
     return {
       ok: false,
-      errors: { token: ["New password cannot be the same as the old password"] },
+      errors: {
+        token: ["New password cannot be the same as the old password"],
+      },
       values: data,
     };
   }

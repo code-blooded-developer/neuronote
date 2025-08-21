@@ -1,7 +1,9 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+
 import Link from "next/link";
+
 import { Eye, EyeOff } from "lucide-react";
 import { signIn } from "next-auth/react";
 
@@ -19,7 +21,6 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
 import { signUpAction } from "../actions";
-
 import Verification from "./verification";
 
 export default function SignUp() {

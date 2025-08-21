@@ -1,6 +1,6 @@
+import mammoth from "mammoth";
 // @ts-expect-error this library does not export types
 import pdfParse from "pdf-parse-fixed";
-import mammoth from "mammoth";
 
 export async function parseDocument(
   buffer: ArrayBuffer,

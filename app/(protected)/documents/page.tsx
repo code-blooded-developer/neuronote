@@ -1,7 +1,8 @@
 import { getUserDocuments } from "@/app/(protected)/actions/document";
-import DocumentsClient from "./DocumentsClient";
 
 import { DocumentWithUrl } from "@/types/document";
+
+import DocumentsClient from "./DocumentsClient";
 
 export default async function DocumentsPage() {
   let documents: DocumentWithUrl[] = [];
