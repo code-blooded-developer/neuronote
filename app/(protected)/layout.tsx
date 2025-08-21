@@ -8,6 +8,7 @@ import { FileText, Star } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 type LayoutData = {
+  isChatPage?: boolean;
   title?: string;
   isStarred?: boolean;
   showHeader?: boolean;
@@ -61,7 +62,11 @@ export default function ProtectedPageLayout({
               </div>
             </header>
 
-            <main className="flex-1 p-6">{children}</main>
+            <main
+              className={`flex-1 ${layoutData.isChatPage ? "flex" : "p-6"}`}
+            >
+              {children}
+            </main>
           </div>
         </LayoutContext.Provider>
       </div>
