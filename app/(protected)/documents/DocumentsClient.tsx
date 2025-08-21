@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { useRouter } from "next/navigation";
+
 import { useProgress } from "@bprogress/next";
 import { DocumentStatus } from "@prisma/client";
 import {
@@ -17,7 +19,6 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 import {
   softDeleteDocument,
@@ -64,6 +65,18 @@ export default function DocumentsClient({
   const { toast } = useToast();
   const { start, stop } = useProgress();
   const router = useRouter();
+
+  const {
+    getRootProps,
+    getInputProps,
+    isDragActive,
+    open,
+    retryUpload,
+    isUploadActive,
+  } = useDocumentUploader({
+    setDocuments,
+    setUploadQueue,
+  });
 
   const toggleDocumentStar = async (documentId: string) => {
     try {
@@ -118,30 +131,6 @@ export default function DocumentsClient({
   const goToDocumentViewer = (slug: string) => {
     router.push(`/documents/${slug}`);
   };
-
-  const { getRootProps, getInputProps, isDragActive, open } =
-    useDocumentUploader({
-      setDocuments,
-      setUploadQueue,
-      updateQueue,
-      handleError,
-    });
-
-  function updateQueue(id: string, updates: Partial<UploadStatus>) {
-    setUploadQueue((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...updates } : item))
-    );
-  }
-
-  function handleError(id: string, fileName: string, error: string) {
-    updateQueue(id, { status: "error", error });
-
-    toast({
-      title: "Upload failed",
-      description: `${fileName}: ${error}`,
-      variant: "destructive",
-    });
-  }
 
   const sortDocuments = (documents: DocumentWithUrl[]) => {
     switch (sortBy) {
@@ -267,41 +256,34 @@ export default function DocumentsClient({
                       </div>
                     )}
 
-                    {upload.status === "error" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          // Retry upload
-                          setUploadQueue((prev) =>
-                            prev.map((item) =>
-                              item.id === upload.id
-                                ? {
-                                    ...item,
-                                    status: "uploading",
-                                    progress: 0,
-                                    error: undefined,
-                                  }
-                                : item
-                            )
-                          );
-                        }}
-                      >
-                        Retry
-                      </Button>
-                    )}
-
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() =>
-                        setUploadQueue((prev) =>
-                          prev.filter((item) => item.id !== upload.id)
-                        )
-                      }
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    {upload.status === "error" &&
+                      upload.canRetry &&
+                      !upload.isRetrying &&
+                      !isUploadActive(upload.id) && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={isUploadActive(upload.id)}
+                            onClick={() => {
+                              retryUpload(upload.id);
+                            }}
+                          >
+                            Retry
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() =>
+                              setUploadQueue((prev) =>
+                                prev.filter((item) => item.id !== upload.id)
+                              )
+                            }
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                   </div>
                 </div>
               ))}

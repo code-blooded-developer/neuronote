@@ -26,4 +26,7 @@ export interface UploadStatus {
   progress: number;
   status: DocumentStatus;
   error?: string;
+  canRetry?: boolean;
+  retryAttempt?: number;
+  isRetrying?: boolean;
 }
