@@ -1,7 +1,6 @@
 import { DocumentStatus } from "@prisma/client";
 
 export interface Document {
-  url: string;
   id: string;
   status: DocumentStatus;
   createdAt: Date;
@@ -15,7 +14,9 @@ export interface Document {
   deletedAt: Date | null;
 }
 
-export type DocumentWithoutUrl = Omit<Document, "url">;
+export type DocumentWithUrl = Document & {
+  url: string;
+};
 
 export interface UploadStatus {
   id: string;
