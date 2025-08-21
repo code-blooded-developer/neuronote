@@ -1,7 +1,11 @@
+"use server";
+
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { getQueryEmbeddings } from "@/lib/embedding";
 import { getChatResponse } from "@/lib/chat";
+
+import { MessageRole } from "@prisma/client";
 
 export async function queryDocuments(
   query: string,
@@ -12,12 +16,24 @@ export async function queryDocuments(
   if (!session?.user?.id) throw new Error("Unauthorized");
 
   const chat = chatId
-    ? await prisma.chat.findUnique({ where: { id: chatId } })
+    ? await prisma.chat.findUnique({
+        where: { id: chatId },
+        include: { documents: { include: { document: true } } },
+      })
     : await prisma.chat.create({
         data: {
           userId: session.user.id,
           title: query.slice(0, 50),
+          documents:
+            documentIds && documentIds.length > 0
+              ? {
+                  create: documentIds.map((id) => ({
+                    document: { connect: { id } },
+                  })),
+                }
+              : undefined,
         },
+        include: { documents: { include: { document: true } } },
       });
 
   if (!chat) throw new Error("Chat not found");
@@ -25,7 +41,7 @@ export async function queryDocuments(
   await prisma.message.create({
     data: {
       chatId: chat.id,
-      role: "user",
+      role: MessageRole.user,
       content: query,
     },
   });
@@ -75,7 +91,7 @@ export async function queryDocuments(
   await prisma.message.create({
     data: {
       chatId: chat.id,
-      role: "assistant",
+      role: MessageRole.assistant,
       content: chatResponse,
     },
   });
@@ -89,4 +105,54 @@ export async function queryDocuments(
       similarity: r.similarity,
     })),
   };
+}
+
+export async function getUserChats() {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const chats = await prisma.chat.findMany({
+    where: { userId: session.user.id },
+    orderBy: { createdAt: "desc" },
+    include: {
+      documents: {
+        select: {
+          document: {
+            select: { id: true },
+          },
+        },
+      },
+    },
+  });
+
+  return chats.map((chat) => ({
+    id: chat.id,
+    title: chat.title,
+    createdAt: chat.createdAt,
+    updatedAt: chat.updatedAt,
+    userId: chat.userId,
+    documentIds: chat.documents.map((doc) => doc.document.id),
+  }));
+}
+
+export async function getChatMessages(chatId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const chat = await prisma.chat.findUnique({
+    where: { id: chatId, userId: session.user.id },
+  });
+  if (!chat) throw new Error("Chat not found");
+
+  const messages = await prisma.message.findMany({
+    where: { chatId },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return messages.map((msg) => ({
+    id: msg.id,
+    role: msg.role,
+    content: msg.content,
+    createdAt: msg.createdAt,
+  }));
 }

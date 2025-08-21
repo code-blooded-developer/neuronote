@@ -29,60 +29,20 @@ import { LayoutContext } from "../layout";
 
 import { getUserReadyDocuments } from "../actions/document";
 
+import { queryDocuments, getUserChats, getChatMessages } from "../actions/chat";
+
 import { DocumentWithoutUrl as Document } from "@/types/document";
 
 import { formatFileSize } from "@/utils/document";
 
-interface Message {
-  id: string;
-  type: "user" | "ai";
-  content: string;
-  timestamp: Date;
-  sources?: string[];
-}
-
-interface ChatSession {
-  id: string;
-  name: string;
-  lastMessage: string;
-  timestamp: Date;
-  documentIds: number[];
-}
-
-const sampleMessages: Message[] = [
-  {
-    id: "1",
-    type: "ai",
-    content:
-      "Hello! I'm ready to help you analyze your documents. What would you like to know?",
-    timestamp: new Date(Date.now() - 1000 * 60 * 5),
-  },
-  {
-    id: "2",
-    type: "user",
-    content: "What are the key findings from the Q4 financial report?",
-    timestamp: new Date(Date.now() - 1000 * 60 * 3),
-  },
-  {
-    id: "3",
-    type: "ai",
-    content:
-      "Based on the Q4 Financial Report, here are the key findings:\n\n• Revenue increased by 23% compared to Q3\n• Operating margin improved to 18.5%\n• Customer acquisition cost decreased by 12%\n• Net income reached $2.4M, exceeding projections",
-    timestamp: new Date(Date.now() - 1000 * 60 * 2),
-    sources: ["Q4 Financial Report.pdf"],
-  },
-];
+import { Chat, Message, MessageRole } from "@prisma/client";
 
 const AIChat = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [messages, setMessages] = useState<Message[]>(() => {
-    const saved = localStorage.getItem("aiChatMessages");
-    return saved ? JSON.parse(saved) : sampleMessages;
-  });
-  const [selectedDocuments, setSelectedDocuments] = useState<Document[]>(() => {
-    const saved = localStorage.getItem("aiChatDocuments");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const [messages, setMessages] = useState<Omit<Message, "chatId">[]>([]);
+  const [selectedDocuments, setSelectedDocuments] = useState<Document[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -96,63 +56,81 @@ const AIChat = () => {
   };
 
   useEffect(() => {
+    setLayoutData({
+      isChatPage: true,
+    });
+    return () => setLayoutData({});
+  }, [setLayoutData]);
+
+  useEffect(() => {
     const fetchDocuments = async () => {
       const docs = await getUserReadyDocuments();
       setDocuments(docs);
     };
+
+    const fetchChats = async () => {
+      const fetchedChats = await getUserChats();
+      setChats(fetchedChats);
+      if (fetchedChats.length > 0) {
+        setSelectedChat(fetchedChats[0]);
+      }
+    };
+
     fetchDocuments();
+    fetchChats();
   }, []);
 
   useEffect(() => {
-    const fetchDocument = async () => {
-      setLayoutData({
-        isChatPage: true,
-      });
-    };
-    fetchDocument();
-    return () => setLayoutData({});
-  }, [setLayoutData]);
+    if (selectedChat) {
+      setSelectedDocuments(
+        documents.filter((doc) => selectedChat.documentIds.includes(doc.id))
+      );
+
+      const fetchMessages = async () => {
+        const chatMessages = await getChatMessages(selectedChat.id);
+        setMessages(chatMessages);
+      };
+      fetchMessages();
+    } else {
+      setMessages([]);
+    }
+  }, [documents, selectedChat]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // Save messages and documents to localStorage
-  useEffect(() => {
-    localStorage.setItem("aiChatMessages", JSON.stringify(messages));
-  }, [messages]);
-
-  useEffect(() => {
-    localStorage.setItem("aiChatDocuments", JSON.stringify(selectedDocuments));
-  }, [selectedDocuments]);
-
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputValue.trim()) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: "user",
-      content: inputValue,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: "ai",
-        content:
-          "I'm analyzing your documents to provide you with the most accurate answer. This is a simulated response for demonstration purposes.",
-        timestamp: new Date(),
-        sources: selectedDocuments.map((doc) => doc.fileName),
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-      setIsTyping(false);
-    }, 2000);
+    const userMessage: Omit<Message, "chatId"> = {
+      id: Date.now().toString(),
+      role: MessageRole.user,
+      content: inputValue,
+      createdAt: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+
+    const chat = await queryDocuments(
+      inputValue,
+      selectedDocuments.map((doc) => doc.id),
+      selectedChat?.id
+    );
+
+    const aiMessage: Omit<Message, "chatId"> = {
+      id: Date.now().toString(),
+      role: MessageRole.assistant,
+      content: chat.answer,
+      createdAt: new Date(),
+    };
+
+    setMessages((prev) => [...prev, aiMessage]);
+
+    setIsTyping(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -311,10 +289,12 @@ const AIChat = () => {
               <div
                 key={message.id}
                 className={`flex gap-3 ${
-                  message.type === "user" ? "justify-end" : "justify-start"
+                  message.role === MessageRole.user
+                    ? "justify-end"
+                    : "justify-start"
                 }`}
               >
-                {message.type === "ai" && (
+                {message.role === MessageRole.assistant && (
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
                       <Bot className="h-4 w-4 text-primary-foreground" />
@@ -324,12 +304,12 @@ const AIChat = () => {
 
                 <div
                   className={`max-w-[70%] ${
-                    message.type === "user" ? "order-1" : ""
+                    message.role === "user" ? "order-1" : ""
                   }`}
                 >
                   <Card
                     className={`${
-                      message.type === "user"
+                      message.role === MessageRole.user
                         ? "bg-primary text-primary-foreground"
                         : "bg-card"
                     }`}
@@ -338,7 +318,7 @@ const AIChat = () => {
                       <p className="text-sm whitespace-pre-wrap">
                         {message.content}
                       </p>
-                      {message.sources && (
+                      {/* {message.sources && (
                         <div className="mt-2 pt-2 border-t border-border/50">
                           <p className="text-xs text-muted-foreground mb-1">
                             Sources:
@@ -355,18 +335,18 @@ const AIChat = () => {
                             ))}
                           </div>
                         </div>
-                      )}
+                      )} */}
                     </CardContent>
                   </Card>
-                  {/* <p className="text-xs text-muted-foreground mt-1 px-3">
-                      {message.timestamp.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p> */}
+                  <p className="text-xs text-muted-foreground mt-1 px-3">
+                    {message.createdAt.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
                 </div>
 
-                {message.type === "user" && (
+                {message.role === MessageRole.user && (
                   <div className="flex-shrink-0 order-2">
                     <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
                       <User className="h-4 w-4 text-accent-foreground" />
@@ -405,7 +385,7 @@ const AIChat = () => {
               <Input
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyPress}
                 placeholder="Ask me anything about your documents..."
                 className="flex-1"
                 disabled={isTyping}

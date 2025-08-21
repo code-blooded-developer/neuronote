@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/auth";
 
-const protectedRoutes = ["/dashboard", "/documents"]; // pages that require login
+const protectedRoutes = ["/dashboard", "/documents", "/chat"]; // pages that require login
 const unprotectedRoutes = [
   "/",
   "/auth/signin",

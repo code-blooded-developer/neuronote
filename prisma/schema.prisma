@@ -85,8 +85,9 @@ model Document {
   isStarred Boolean   @default(false)
   deletedAt DateTime?
 
-  tags   DocumentTag[]   @relation("DocumentTags")
-  chunks DocumentChunk[]
+  tags         DocumentTag[]   @relation("DocumentTags")
+  chunks       DocumentChunk[]
+  chats ChatDocument[]
 
   @@unique([userId, storagePath])
   @@index([userId, createdAt])
@@ -131,7 +132,22 @@ model Chat {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  messages Message[]
+  messages  Message[]
+  documents ChatDocument[]
+}
+
+model ChatDocument {
+  id         String   @id @default(cuid())
+  chatId     String
+  documentId String
+  chat       Chat     @relation(fields: [chatId], references: [id])
+  document   Document @relation(fields: [documentId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([chatId, documentId]) // prevent duplicates
+  @@index([chatId])
+  @@index([documentId])
 }
 
 model Message {
