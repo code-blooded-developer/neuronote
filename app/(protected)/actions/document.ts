@@ -7,9 +7,9 @@ import { randomUUID } from "crypto";
 import { DocumentStatus } from "@prisma/client";
 
 import { Document } from "@/lib/validation";
-import { parseDocument } from "@/lib/parseDocument";
-import { splitTextWithLangchain } from "@/lib/chunkText";
-import { getDocEmbeddings } from "@/lib/embedChunks";
+import { parseDocument } from "@/lib/parsing";
+import { splitTextWithLangchain } from "@/lib/chunking";
+import { getDocEmbeddings } from "@/lib/embedding";
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,

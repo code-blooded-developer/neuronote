@@ -1,3 +1,4 @@
+import { DocumentStatus } from "@prisma/client";
 import { z } from "zod";
 
 function passwordRefineCallback(
@@ -135,7 +136,7 @@ export type ResetPasswordFormState = {
 export interface Document {
   url: string;
   id: string;
-  status: string | null;
+  status: DocumentStatus;
   createdAt: Date;
   userId: string;
   fileName: string;
