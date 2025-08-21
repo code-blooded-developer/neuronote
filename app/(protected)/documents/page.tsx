@@ -65,17 +65,9 @@ import { Badge } from "@/components/ui/badge";
 
 import { DocumentStatus } from "@prisma/client";
 
-import { formatFileSize } from "@/utils/document";
+import { formatFileSize } from "@/lib/utils";
 
-interface UploadStatus {
-  id: string;
-  file: File;
-  name: string;
-  size: string;
-  progress: number;
-  status: DocumentStatus;
-  error?: string;
-}
+import { UploadStatus } from "@/types/document";
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([]);

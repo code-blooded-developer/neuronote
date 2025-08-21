@@ -33,7 +33,7 @@ import { queryDocuments, getUserChats, getChatMessages } from "../actions/chat";
 
 import { DocumentWithoutUrl as Document } from "@/types/document";
 
-import { formatFileSize } from "@/utils/document";
+import { formatFileSize } from "@/lib/utils";
 
 import { Chat, Message, MessageRole } from "@prisma/client";
 

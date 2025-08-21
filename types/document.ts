@@ -16,3 +16,13 @@ export interface Document {
 }
 
 export type DocumentWithoutUrl = Omit<Document, "url">;
+
+export interface UploadStatus {
+  id: string;
+  file: File;
+  name: string;
+  size: string;
+  progress: number;
+  status: DocumentStatus;
+  error?: string;
+}
