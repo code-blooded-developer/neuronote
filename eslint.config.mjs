@@ -48,6 +48,7 @@ const eslintConfig = [
           ],
           importOrderSeparation: true,
           importOrderSortSpecifiers: true,
+          importOrderCaseInsensitive: true,
         },
         {
           usePrettierrc: false,
