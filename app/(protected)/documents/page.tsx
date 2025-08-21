@@ -60,10 +60,12 @@ import {
 
 import { useProgress } from "@bprogress/next";
 
-import { Document } from "@/lib/validation";
+import { Document } from "@/types/document";
 import { Badge } from "@/components/ui/badge";
 
 import { DocumentStatus } from "@prisma/client";
+
+import { formatFileSize } from "@/utils/document";
 
 interface UploadStatus {
   id: string;
@@ -168,14 +170,6 @@ export default function DocumentsPage() {
 
   const goToDocumentViewer = (slug: string) => {
     router.push(`/documents/${slug}`);
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({

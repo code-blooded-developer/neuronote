@@ -27,25 +27,18 @@ import {
 
 import { LayoutContext } from "../layout";
 
+import { getUserReadyDocuments } from "../actions/document";
+
+import { DocumentWithoutUrl as Document } from "@/types/document";
+
+import { formatFileSize } from "@/utils/document";
+
 interface Message {
   id: string;
   type: "user" | "ai";
   content: string;
   timestamp: Date;
   sources?: string[];
-}
-
-interface Document {
-  id: number;
-  name: string;
-  type: string;
-  collection: string;
-  size: string;
-  starred: boolean;
-  tags: string[];
-  lastModified: string;
-  author: string;
-  status: "uploading" | "processing" | "ready" | "error";
 }
 
 interface ChatSession {
@@ -55,82 +48,6 @@ interface ChatSession {
   timestamp: Date;
   documentIds: number[];
 }
-
-// Available documents (same as in Documents page)
-const availableDocuments: Document[] = [
-  {
-    id: 1,
-    name: "Q4 Financial Report.pdf",
-    type: "pdf",
-    collection: "Financial Reports",
-    size: "2.4 MB",
-    starred: true,
-    tags: ["finance", "quarterly", "report"],
-    lastModified: "2024-01-15",
-    author: "John Smith",
-    status: "ready",
-  },
-  {
-    id: 2,
-    name: "User Research Findings.docx",
-    type: "docx",
-    collection: "Research",
-    size: "1.8 MB",
-    starred: false,
-    tags: ["research", "users", "analysis"],
-    lastModified: "2024-01-14",
-    author: "Sarah Johnson",
-    status: "ready",
-  },
-  {
-    id: 3,
-    name: "Product Roadmap 2024.pptx",
-    type: "pptx",
-    collection: "Strategy",
-    size: "5.2 MB",
-    starred: true,
-    tags: ["product", "roadmap", "planning"],
-    lastModified: "2024-01-12",
-    author: "Mike Chen",
-    status: "ready",
-  },
-  {
-    id: 4,
-    name: "Meeting Notes - Jan 8.md",
-    type: "md",
-    collection: "Meetings",
-    size: "45 KB",
-    starred: false,
-    tags: ["meeting", "notes"],
-    lastModified: "2024-01-08",
-    author: "Alex Kim",
-    status: "ready",
-  },
-  {
-    id: 5,
-    name: "Brand Guidelines v2.pdf",
-    type: "pdf",
-    collection: "Design",
-    size: "3.1 MB",
-    starred: true,
-    tags: ["brand", "design", "guidelines"],
-    lastModified: "2024-01-01",
-    author: "Emma Davis",
-    status: "ready",
-  },
-  {
-    id: 6,
-    name: "API Documentation.md",
-    type: "md",
-    collection: "Development",
-    size: "128 KB",
-    starred: false,
-    tags: ["api", "documentation", "development"],
-    lastModified: "2023-12-15",
-    author: "David Wilson",
-    status: "ready",
-  },
-];
 
 const sampleMessages: Message[] = [
   {
@@ -157,6 +74,7 @@ const sampleMessages: Message[] = [
 ];
 
 const AIChat = () => {
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [messages, setMessages] = useState<Message[]>(() => {
     const saved = localStorage.getItem("aiChatMessages");
     return saved ? JSON.parse(saved) : sampleMessages;
@@ -176,6 +94,14 @@ const AIChat = () => {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      const docs = await getUserReadyDocuments();
+      setDocuments(docs);
+    };
+    fetchDocuments();
+  }, []);
 
   useEffect(() => {
     const fetchDocument = async () => {
@@ -222,7 +148,7 @@ const AIChat = () => {
         content:
           "I'm analyzing your documents to provide you with the most accurate answer. This is a simulated response for demonstration purposes.",
         timestamp: new Date(),
-        sources: selectedDocuments.map((doc) => doc.name),
+        sources: selectedDocuments.map((doc) => doc.fileName),
       };
       setMessages((prev) => [...prev, aiMessage]);
       setIsTyping(false);
@@ -236,12 +162,12 @@ const AIChat = () => {
     }
   };
 
-  const removeDocument = (docId: number) => {
+  const removeDocument = (docId: string) => {
     setSelectedDocuments((prev) => prev.filter((doc) => doc.id !== docId));
   };
 
-  const addDocuments = (documentIds: number[]) => {
-    const documentsToAdd = availableDocuments.filter(
+  const addDocuments = (documentIds: string[]) => {
+    const documentsToAdd = documents.filter(
       (doc) =>
         documentIds.includes(doc.id) &&
         !selectedDocuments.some((selected) => selected.id === doc.id)
@@ -249,13 +175,8 @@ const AIChat = () => {
     setSelectedDocuments((prev) => [...prev, ...documentsToAdd]);
   };
 
-  const filteredDocuments = availableDocuments.filter(
-    (doc) =>
-      doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.collection.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.tags.some((tag) =>
-        tag.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+  const filteredDocuments = documents.filter((doc) =>
+    doc.fileName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -289,50 +210,44 @@ const AIChat = () => {
                 </div>
                 <ScrollArea className="h-96">
                   <div className="space-y-2">
-                    {filteredDocuments
-                      .filter((doc) => doc.status === "ready")
-                      .map((doc) => {
-                        const isSelected = selectedDocuments.some(
-                          (selected) => selected.id === doc.id
-                        );
-                        return (
-                          <div
-                            key={doc.id}
-                            className="flex items-center space-x-3 p-3 border rounded-lg"
-                          >
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  addDocuments([doc.id]);
-                                } else {
-                                  removeDocument(doc.id);
-                                }
-                              }}
-                              disabled={isSelected}
-                            />
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <FileText className="h-4 w-4 text-primary flex-shrink-0" />
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium truncate">
-                                  {doc.name}
-                                </p>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-xs"
-                                  >
-                                    {doc.collection}
-                                  </Badge>
-                                  <span className="text-xs text-muted-foreground">
-                                    {doc.size}
-                                  </span>
-                                </div>
+                    {filteredDocuments.map((doc) => {
+                      const isSelected = selectedDocuments.some(
+                        (selected) => selected.id === doc.id
+                      );
+                      return (
+                        <div
+                          key={doc.id}
+                          className="flex items-center space-x-3 p-3 border rounded-lg"
+                        >
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                addDocuments([doc.id]);
+                              } else {
+                                removeDocument(doc.id);
+                              }
+                            }}
+                          />
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium truncate">
+                                {doc.fileName}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                {/* <Badge variant="secondary" className="text-xs">
+                                  {doc.collection}
+                                </Badge> */}
+                                <span className="text-xs text-muted-foreground">
+                                  {formatFileSize(doc.size)}
+                                </span>
                               </div>
                             </div>
                           </div>
-                        );
-                      })}
+                        </div>
+                      );
+                    })}
                   </div>
                 </ScrollArea>
                 <div className="flex justify-end">
@@ -367,14 +282,14 @@ const AIChat = () => {
                       <FileText className="h-4 w-4 mt-0.5 text-primary" />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium truncate">
-                          {doc.name}
+                          {doc.fileName}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="secondary" className="text-xs">
+                          {/* <Badge variant="secondary" className="text-xs">
                             {doc.collection}
-                          </Badge>
+                          </Badge> */}
                           <span className="text-xs text-muted-foreground">
-                            {doc.size}
+                            {formatFileSize(doc.size)}
                           </span>
                         </div>
                       </div>

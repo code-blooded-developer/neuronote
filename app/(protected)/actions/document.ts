@@ -6,7 +6,7 @@ import prisma from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { DocumentStatus } from "@prisma/client";
 
-import { Document } from "@/lib/validation";
+import { Document } from "@/types/document";
 import { parseDocument } from "@/lib/parsing";
 import { splitTextWithLangchain } from "@/lib/chunking";
 import { getDocEmbeddings } from "@/lib/embedding";
@@ -163,4 +163,19 @@ export async function parseAndStoreChunks(doc: Omit<Document, "url">) {
 
     return { success: false, error: "Failed to parse document" };
   }
+}
+
+export async function getUserReadyDocuments() {
+  const user = await requireUser();
+
+  const docs = await prisma.document.findMany({
+    where: {
+      userId: user.id,
+      status: DocumentStatus.ready,
+      deletedAt: null,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return docs;
 }

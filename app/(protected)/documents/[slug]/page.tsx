@@ -5,7 +5,7 @@ import { useState, useEffect, use, useContext } from "react";
 import { getDocumentWithUrl } from "@/app/(protected)/actions/document";
 import { LayoutContext } from "../../layout";
 
-import { Document } from "@/lib/validation";
+import { Document } from "@/types/document";
 
 export default function DocumentViewer({
   params,
