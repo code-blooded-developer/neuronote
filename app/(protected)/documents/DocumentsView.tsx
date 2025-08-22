@@ -117,7 +117,8 @@ export default function DocumentsView({ documents }: DocumentViewProps) {
   const { toast } = useToast();
   const { start, stop } = useProgress();
 
-  const { viewMode, toggleFavorite, removeDocument } = useDocumentStore();
+  const { viewMode, toggleFavorite, removeDocument, updateDocument } =
+    useDocumentStore();
 
   const isGridView = viewMode === "grid";
 
@@ -172,6 +173,22 @@ export default function DocumentsView({ documents }: DocumentViewProps) {
     }
   };
 
+  function processDocument(doc: DocumentWithUrl) {
+    retryDocumentProcessing(doc.id)
+      .then(() => {
+        updateDocument({
+          ...doc,
+          status: DocumentStatus.ready,
+        });
+      })
+      .catch(() => {
+        updateDocument({
+          ...doc,
+          status: DocumentStatus.error,
+        });
+      });
+  }
+
   function DocumentActions({ doc }: { doc: DocumentWithUrl }) {
     return (
       <DropdownMenu>
@@ -194,7 +211,7 @@ export default function DocumentsView({ documents }: DocumentViewProps) {
               className="cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
-                retryDocumentProcessing(doc.id);
+                processDocument(doc);
               }}
             >
               <RotateCcw className="mr-2 h-4 w-4" />

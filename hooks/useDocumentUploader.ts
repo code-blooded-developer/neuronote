@@ -8,6 +8,7 @@ import { useDropzone } from "react-dropzone";
 import {
   createDocumentEntry,
   getSignedUploadUrl,
+  processDocumentContent,
 } from "@/app/(protected)/actions/document";
 
 import { toast } from "@/components/ui/use-toast";
@@ -33,6 +34,7 @@ export function useDocumentUploader() {
     addToUploadQueue,
     removeFromUploadQueue,
     addDocument,
+    updateDocument,
   } = useDocumentStore();
   // Track active uploads to prevent concurrent retries
   const activeUploadsRef = useRef<Set<string>>(new Set());
@@ -151,6 +153,20 @@ export function useDocumentUploader() {
                 removeFromUploadQueue(uploadStatus.id);
               }, 2000);
 
+              processDocumentContent(uploadedDoc)
+                .then(() => {
+                  updateDocument({
+                    ...uploadedDoc,
+                    status: DocumentStatus.ready,
+                  });
+                })
+                .catch(() => {
+                  updateDocument({
+                    ...uploadedDoc,
+                    status: DocumentStatus.error,
+                  });
+                });
+
               resolve();
             } catch (err) {
               console.error("Failed to create document entry:", err);
@@ -176,7 +192,7 @@ export function useDocumentUploader() {
         );
       }
     },
-    [updateUploadQueue, addDocument, removeFromUploadQueue]
+    [updateUploadQueue, addDocument, removeFromUploadQueue, updateDocument]
   );
 
   // Retry mechanism with exponential backoff

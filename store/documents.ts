@@ -12,9 +12,7 @@ interface DocumentState {
 
   setDocuments: (documents: DocumentWithUrl[]) => void;
   addDocument: (document: DocumentWithUrl) => void;
-  updateDocument: (
-    updatedDoc: Partial<DocumentWithUrl> & { id: string }
-  ) => void;
+  updateDocument: (updatedDoc: Partial<DocumentWithUrl>) => void;
   toggleFavorite: (documentId: string) => void;
   removeDocument: (id: string) => void;
 
