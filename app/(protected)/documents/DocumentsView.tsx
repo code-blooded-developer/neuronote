@@ -1,3 +1,6 @@
+import { useRouter } from "next/navigation";
+
+import { useProgress } from "@bprogress/next";
 import { DocumentStatus } from "@prisma/client";
 import {
   CheckCircle,
@@ -13,6 +16,12 @@ import {
   Trash2,
   XCircle,
 } from "lucide-react";
+
+import {
+  purgeDocument,
+  retryDocumentProcessing,
+  toggleStar,
+} from "@/app/(protected)/actions/document";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,22 +40,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { useToast } from "@/hooks/use-toast";
+
 import { formatFileSize } from "@/lib/utils";
+
+import { useDocumentStore } from "@/store/documents";
 
 import type { DocumentWithUrl } from "@/types/document";
 
 interface DocumentViewProps {
   documents: DocumentWithUrl[];
-  deleteDocument: (id: string) => void;
-  toggleDocumentStar: (id: string) => void;
-  goToDocumentViewer: (id: string) => void;
-  retryDocumentProcessing: (id: string) => void;
 }
-
-type DocumentActionsProps = Omit<DocumentViewProps, "documents"> & {
-  doc: DocumentWithUrl;
-  isGridView?: boolean;
-};
 
 const getStatusBadge = (status: DocumentStatus) => {
   switch (status) {
@@ -108,145 +112,185 @@ const downloadDocument = (url: string) => {
   window.open(url, "_blank");
 };
 
-function DocumentActions({
-  doc,
-  isGridView = false,
-  goToDocumentViewer,
-  toggleDocumentStar,
-  deleteDocument,
-  retryDocumentProcessing,
-}: DocumentActionsProps) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={`${
-            isGridView
-              ? "opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-              : ""
-          }`}
-        >
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {doc.status === DocumentStatus.error && (
+export default function DocumentsView({ documents }: DocumentViewProps) {
+  const router = useRouter();
+  const { toast } = useToast();
+  const { start, stop } = useProgress();
+
+  const { viewMode, toggleFavorite, removeDocument } = useDocumentStore();
+
+  const isGridView = viewMode === "grid";
+
+  const goToDocumentViewer = (slug: string) => {
+    router.push(`/documents/${slug}`);
+  };
+
+  const toggleDocumentStar = async (documentId: string) => {
+    try {
+      start();
+
+      await toggleStar(documentId);
+
+      toggleFavorite(documentId);
+
+      toast({
+        title: "Success",
+        description: "Document star status updated.",
+      });
+    } catch (error) {
+      console.error("Failed to toggle star:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update document star status.",
+        variant: "destructive",
+      });
+    } finally {
+      stop();
+    }
+  };
+
+  const deleteDocument = async (documentId: string) => {
+    try {
+      start();
+
+      await purgeDocument(documentId);
+      removeDocument(documentId);
+
+      toast({
+        title: "Success",
+        description: "Document deleted successfully.",
+      });
+    } catch (error) {
+      console.error("Failed to delete document:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete document.",
+        variant: "destructive",
+      });
+    } finally {
+      stop();
+    }
+  };
+
+  function DocumentActions({ doc }: { doc: DocumentWithUrl }) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`${
+              isGridView
+                ? "opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                : ""
+            }`}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {doc.status === DocumentStatus.error && (
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                retryDocumentProcessing(doc.id);
+              }}
+            >
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Retry
+            </DropdownMenuItem>
+          )}
+
           <DropdownMenuItem
             className="cursor-pointer"
-            onSelect={(e) => {
-              e.preventDefault();
-              retryDocumentProcessing(doc.id);
+            disabled={doc.status !== DocumentStatus.ready}
+            onClick={(e) => {
+              e.stopPropagation();
+              goToDocumentViewer(doc.id);
             }}
           >
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Retry
+            <Eye className="mr-2 h-4 w-4" />
+            View
           </DropdownMenuItem>
-        )}
 
-        <DropdownMenuItem
-          className="cursor-pointer"
-          disabled={doc.status !== DocumentStatus.ready}
-          onSelect={(e) => {
-            e.preventDefault();
-            goToDocumentViewer(doc.id);
-          }}
-        >
-          <Eye className="mr-2 h-4 w-4" />
-          View
-        </DropdownMenuItem>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            disabled={doc.status !== DocumentStatus.ready}
+            onClick={(e) => {
+              e.stopPropagation();
+              downloadDocument(doc.url);
+            }}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Download
+          </DropdownMenuItem>
 
-        <DropdownMenuItem
-          className="cursor-pointer"
-          disabled={doc.status !== DocumentStatus.ready}
-          onSelect={(e) => {
-            e.preventDefault();
-            downloadDocument(doc.url);
-          }}
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Download
-        </DropdownMenuItem>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleDocumentStar(doc.id);
+            }}
+          >
+            <Star
+              className={`mr-2 h-4 w-4 ${
+                doc.isStarred ? "fill-current text-yellow-500" : ""
+              }`}
+            />
+            {doc.isStarred ? "Unstar" : "Star"}
+          </DropdownMenuItem>
 
-        <DropdownMenuItem
-          className="cursor-pointer"
-          onSelect={(e) => {
-            e.preventDefault();
-            toggleDocumentStar(doc.id);
-          }}
-        >
-          <Star
-            className={`mr-2 h-4 w-4 ${
-              doc.isStarred ? "fill-current text-yellow-500" : ""
-            }`}
-          />
-          {doc.isStarred ? "Unstar" : "Star"}
-        </DropdownMenuItem>
+          <DropdownMenuSeparator />
 
-        <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-destructive cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              deleteDocument(doc.id);
+            }}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
 
-        <DropdownMenuItem
-          className="text-destructive cursor-pointer"
-          onSelect={(e) => {
-            e.preventDefault();
-            deleteDocument(doc.id);
-          }}
-        >
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-export function GridView({
-  documents,
-  deleteDocument,
-  goToDocumentViewer,
-  toggleDocumentStar,
-  retryDocumentProcessing,
-}: DocumentViewProps) {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {documents.map((doc) => (
-        <Card
-          key={doc.id}
-          className="hover:shadow-lg transition-shadow cursor-pointer group"
-          onClick={() => {
-            if (doc.status === DocumentStatus.ready) {
-              goToDocumentViewer(doc.id);
-            }
-          }}
-        >
-          <CardHeader className="pb-2">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                {getFileIcon(doc.mimeType)}
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="text-sm font-medium truncate">
-                    {doc.fileName}
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    {formatFileSize(doc.size)}
-                  </CardDescription>
+  function GridView() {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {documents.map((doc) => (
+          <Card
+            key={doc.id}
+            className="hover:shadow-lg transition-shadow cursor-pointer group"
+            onClick={() => {
+              if (doc.status === DocumentStatus.ready) {
+                goToDocumentViewer(doc.id);
+              }
+            }}
+          >
+            <CardHeader className="pb-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  {getFileIcon(doc.mimeType)}
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-sm font-medium truncate">
+                      {doc.fileName}
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      {formatFileSize(doc.size)}
+                    </CardDescription>
+                  </div>
                 </div>
+                <DocumentActions doc={doc} />
               </div>
-              <DocumentActions
-                doc={doc}
-                isGridView
-                goToDocumentViewer={goToDocumentViewer}
-                toggleDocumentStar={toggleDocumentStar}
-                deleteDocument={deleteDocument}
-                retryDocumentProcessing={retryDocumentProcessing}
-              />
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="space-y-2">
-              {getStatusBadge(doc.status)}
-              {/* <Badge variant="secondary" className="text-xs">
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-2">
+                {getStatusBadge(doc.status)}
+                {/* <Badge variant="secondary" className="text-xs">
                 {doc.collection}
               </Badge>
               <div className="flex flex-wrap gap-1">
@@ -261,74 +305,66 @@ export function GridView({
                   </Badge>
                 )}
               </div> */}
-              <div className="text-xs text-muted-foreground">
-                {/* <p>By {doc.author}</p> */}
-                <p>
-                  Created {new Date(doc.createdAt).toLocaleDateString("en")}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
-export function ListView({
-  documents,
-  deleteDocument,
-  goToDocumentViewer,
-  toggleDocumentStar,
-  retryDocumentProcessing,
-}: DocumentViewProps) {
-  return (
-    <div className="space-y-2">
-      {documents.map((doc) => (
-        <Card
-          key={doc.id}
-          className="hover:shadow-md transition-shadow cursor-pointer"
-          onClick={() => {
-            if (doc.status === DocumentStatus.ready) {
-              goToDocumentViewer(doc.id);
-            }
-          }}
-        >
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 flex-1 min-w-0">
-                {getFileIcon(doc.mimeType)}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium truncate">{doc.fileName}</h3>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>{formatFileSize(doc.size)}</span>
-                    <span>•</span>
-                    {/* <span>By {doc.author}</span>
-                    <span>•</span> */}
-                    <span>
-                      Created {new Date(doc.createdAt).toLocaleDateString("en")}
-                    </span>
-                  </div>
+                <div className="text-xs text-muted-foreground">
+                  {/* <p>By {doc.author}</p> */}
+                  <p>
+                    Created {new Date(doc.createdAt).toLocaleDateString("en")}
+                  </p>
                 </div>
-                <div className="hidden md:flex items-center gap-2">
-                  {getStatusBadge(doc.status)}
-                  {/* <Badge variant="secondary">{doc.collection}</Badge>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  function ListView() {
+    return (
+      <div className="space-y-2">
+        {documents.map((doc) => (
+          <Card
+            key={doc.id}
+            className="hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => {
+              if (doc.status === DocumentStatus.ready) {
+                goToDocumentViewer(doc.id);
+              }
+            }}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  {getFileIcon(doc.mimeType)}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium truncate">{doc.fileName}</h3>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>{formatFileSize(doc.size)}</span>
+                      <span>•</span>
+                      {/* <span>By {doc.author}</span>
+                    <span>•</span> */}
+                      <span>
+                        Created{" "}
+                        {new Date(doc.createdAt).toLocaleDateString("en")}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="hidden md:flex items-center gap-2">
+                    {getStatusBadge(doc.status)}
+                    {/* <Badge variant="secondary">{doc.collection}</Badge>
                   {doc.isStarred && (
                     <Star className="h-4 w-4 fill-current text-yellow-500" />
                   )} */}
+                  </div>
                 </div>
+                <DocumentActions doc={doc} />
               </div>
-              <DocumentActions
-                doc={doc}
-                goToDocumentViewer={goToDocumentViewer}
-                toggleDocumentStar={toggleDocumentStar}
-                deleteDocument={deleteDocument}
-                retryDocumentProcessing={retryDocumentProcessing}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  return isGridView ? <GridView /> : <ListView />;
 }

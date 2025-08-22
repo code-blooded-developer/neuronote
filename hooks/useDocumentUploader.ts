@@ -14,7 +14,9 @@ import { toast } from "@/components/ui/use-toast";
 
 import { formatFileSize } from "@/lib/utils";
 
-import { DocumentWithUrl, UploadStatus } from "@/types/document";
+import { useDocumentStore } from "@/store/documents";
+
+import { UploadStatus } from "@/types/document";
 
 // Add retry configuration
 const RETRY_CONFIG = {
@@ -23,24 +25,17 @@ const RETRY_CONFIG = {
   maxDelay: 10000, // 10 seconds
 };
 
-export function useDocumentUploader({
-  setDocuments,
-  setUploadQueue,
-}: {
-  setDocuments: React.Dispatch<React.SetStateAction<DocumentWithUrl[]>>;
-  setUploadQueue: React.Dispatch<React.SetStateAction<UploadStatus[]>>;
-}) {
+export function useDocumentUploader() {
+  const {
+    uploadQueue,
+    setUploadQueue,
+    updateUploadQueue,
+    addToUploadQueue,
+    removeFromUploadQueue,
+    addDocument,
+  } = useDocumentStore();
   // Track active uploads to prevent concurrent retries
   const activeUploadsRef = useRef<Set<string>>(new Set());
-
-  const updateQueue = useCallback(
-    (id: string, updates: Partial<UploadStatus>) => {
-      setUploadQueue((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, ...updates } : item))
-      );
-    },
-    [setUploadQueue]
-  );
 
   const handleError = useCallback(
     (
@@ -52,7 +47,7 @@ export function useDocumentUploader({
       // Remove from active uploads on error
       activeUploadsRef.current.delete(id);
 
-      updateQueue(id, {
+      updateUploadQueue(id, {
         status: "error",
         error,
         canRetry,
@@ -65,7 +60,7 @@ export function useDocumentUploader({
         variant: "destructive",
       });
     },
-    [updateQueue]
+    [updateUploadQueue]
   );
 
   // Exponential backoff delay calculation
@@ -100,7 +95,7 @@ export function useDocumentUploader({
         );
 
         // Update upload status with current attempt info
-        updateQueue(uploadStatus.id, {
+        updateUploadQueue(uploadStatus.id, {
           status: DocumentStatus.uploading,
           error: undefined,
           retryAttempt: attempt,
@@ -115,7 +110,7 @@ export function useDocumentUploader({
           // Progress handler
           xhr.upload.onprogress = (e) => {
             if (!e.lengthComputable) return;
-            updateQueue(uploadStatus.id, {
+            updateUploadQueue(uploadStatus.id, {
               progress: Math.round((e.loaded / e.total) * 100),
             });
           };
@@ -135,9 +130,9 @@ export function useDocumentUploader({
                 size: file.size,
               });
 
-              setDocuments((prev) => [...prev, uploadedDoc]);
+              addDocument(uploadedDoc);
 
-              updateQueue(uploadStatus.id, {
+              updateUploadQueue(uploadStatus.id, {
                 status: DocumentStatus.ready,
                 progress: 100,
                 isRetrying: false,
@@ -153,9 +148,7 @@ export function useDocumentUploader({
 
               // Auto-cleanup successful uploads after delay
               setTimeout(() => {
-                setUploadQueue((prev) =>
-                  prev.filter((i) => i.id !== uploadStatus.id)
-                );
+                removeFromUploadQueue(uploadStatus.id);
               }, 2000);
 
               resolve();
@@ -183,7 +176,7 @@ export function useDocumentUploader({
         );
       }
     },
-    [updateQueue, setDocuments, setUploadQueue]
+    [updateUploadQueue, addDocument, removeFromUploadQueue]
   );
 
   // Retry mechanism with exponential backoff
@@ -223,7 +216,7 @@ export function useDocumentUploader({
           );
 
           // Reset progress for retry
-          updateQueue(uploadStatus.id, { progress: 0 });
+          updateUploadQueue(uploadStatus.id, { progress: 0 });
         }
       }
 
@@ -235,7 +228,7 @@ export function useDocumentUploader({
         true // Can still manually retry
       );
     },
-    [uploadFile, calculateDelay, updateQueue, handleError]
+    [uploadFile, calculateDelay, updateUploadQueue, handleError]
   );
 
   // Manual retry function
@@ -250,8 +243,8 @@ export function useDocumentUploader({
         return;
       }
 
-      setUploadQueue((prev) =>
-        prev.map((item) => {
+      setUploadQueue(
+        uploadQueue.map((item) => {
           if (
             item.id === uploadId &&
             item.status === "error" &&
@@ -278,7 +271,7 @@ export function useDocumentUploader({
         })
       );
     },
-    [setUploadQueue, uploadWithRetry]
+    [uploadQueue, setUploadQueue, uploadWithRetry]
   );
 
   const onDrop = useCallback(
@@ -307,7 +300,7 @@ export function useDocumentUploader({
           canRetry: false,
         };
 
-        setUploadQueue((prev) => [...prev, uploadStatus]);
+        addToUploadQueue(uploadStatus);
 
         // Start upload with retry logic
         await uploadWithRetry(file, uploadStatus);
@@ -320,25 +313,8 @@ export function useDocumentUploader({
         });
       }
     },
-    [setUploadQueue, uploadWithRetry]
+    [uploadWithRetry, addToUploadQueue]
   );
-
-  // Cleanup successful uploads
-  const cleanupQueue = useCallback(() => {
-    setUploadQueue((prev) =>
-      prev.filter((item) => item.status !== DocumentStatus.ready)
-    );
-  }, [setUploadQueue]);
-
-  // Cleanup all completed uploads (manual cleanup)
-  const clearCompletedUploads = useCallback(() => {
-    setUploadQueue((prev) =>
-      prev.filter(
-        (item) =>
-          item.status !== DocumentStatus.ready && item.status !== "error"
-      )
-    );
-  }, [setUploadQueue]);
 
   const dropzoneProps = useDropzone({
     onDrop,
@@ -354,8 +330,6 @@ export function useDocumentUploader({
   return {
     ...dropzoneProps,
     retryUpload,
-    cleanupQueue,
-    clearCompletedUploads,
     isUploadActive: (uploadId: string) =>
       activeUploadsRef.current.has(uploadId),
   };

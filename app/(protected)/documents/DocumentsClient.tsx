@@ -1,28 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 
-import { useRouter } from "next/navigation";
-
-import { useProgress } from "@bprogress/next";
 import { FileText, Plus, Upload } from "lucide-react";
-
-import {
-  purgeDocument,
-  retryDocumentProcessing,
-  toggleStar,
-} from "@/app/(protected)/actions/document";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-import { useToast } from "@/hooks/use-toast";
 import { useDocumentUploader } from "@/hooks/useDocumentUploader";
 
-import { DocumentWithUrl, UploadStatus } from "@/types/document";
+import { useDocumentStore } from "@/store/documents";
+
+import { DocumentWithUrl } from "@/types/document";
 
 import DocumentFilters from "./DocumentFilters";
-import { GridView, ListView } from "./DocumentsView";
+import DocumentsView from "./DocumentsView";
 import UploadProgress from "./UploadProgress";
 
 export default function DocumentsClient({
@@ -30,82 +22,15 @@ export default function DocumentsClient({
 }: {
   initialDocuments: DocumentWithUrl[];
 }) {
-  const [documents, setDocuments] =
-    useState<DocumentWithUrl[]>(initialDocuments);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [sortBy, setSortBy] = useState("recent");
-  const [uploadQueue, setUploadQueue] = useState<UploadStatus[]>([]);
-  const { toast } = useToast();
-  const { start, stop } = useProgress();
-  const router = useRouter();
+  const { documents, searchQuery, selectedFilter, sortBy, setDocuments } =
+    useDocumentStore();
 
-  const {
-    getRootProps,
-    getInputProps,
-    isDragActive,
-    open,
-    retryUpload,
-    isUploadActive,
-  } = useDocumentUploader({
-    setDocuments,
-    setUploadQueue,
-  });
+  useEffect(() => {
+    setDocuments(initialDocuments);
+  }, [initialDocuments, setDocuments]);
 
-  const toggleDocumentStar = async (documentId: string) => {
-    try {
-      start();
-
-      await toggleStar(documentId);
-      setDocuments((prev) =>
-        prev.map((doc) =>
-          doc.id === documentId ? { ...doc, isStarred: !doc.isStarred } : doc
-        )
-      );
-
-      toast({
-        title: "Success",
-        description: "Document star status updated.",
-      });
-    } catch (error) {
-      console.error("Failed to toggle star:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update document star status.",
-        variant: "destructive",
-      });
-    } finally {
-      stop();
-    }
-  };
-
-  const deleteDocument = async (documentId: string) => {
-    try {
-      start();
-
-      await purgeDocument(documentId);
-      setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
-
-      toast({
-        title: "Success",
-        description: "Document deleted successfully.",
-      });
-    } catch (error) {
-      console.error("Failed to delete document:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete document.",
-        variant: "destructive",
-      });
-    } finally {
-      stop();
-    }
-  };
-
-  const goToDocumentViewer = (slug: string) => {
-    router.push(`/documents/${slug}`);
-  };
+  const { getRootProps, getInputProps, isDragActive, open } =
+    useDocumentUploader();
 
   const sortDocuments = (documents: DocumentWithUrl[]) => {
     switch (sortBy) {
@@ -169,23 +94,9 @@ export default function DocumentsClient({
           </Card>
         )}
 
-        <UploadProgress
-          uploadQueue={uploadQueue}
-          setUploadQueue={setUploadQueue}
-          retryUpload={retryUpload}
-          isUploadActive={isUploadActive}
-        />
+        <UploadProgress />
 
-        <DocumentFilters
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          selectedFilter={selectedFilter}
-          setSelectedFilter={setSelectedFilter}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-        />
+        <DocumentFilters />
 
         {/* Documents */}
         {filteredDocuments.length === 0 ? (
@@ -212,23 +123,7 @@ export default function DocumentsClient({
                 {filteredDocuments.length !== 1 ? "s" : ""} found
               </p>
             </div>
-            {viewMode === "grid" ? (
-              <GridView
-                documents={filteredDocuments}
-                deleteDocument={deleteDocument}
-                toggleDocumentStar={toggleDocumentStar}
-                goToDocumentViewer={goToDocumentViewer}
-                retryDocumentProcessing={retryDocumentProcessing}
-              />
-            ) : (
-              <ListView
-                documents={filteredDocuments}
-                deleteDocument={deleteDocument}
-                toggleDocumentStar={toggleDocumentStar}
-                goToDocumentViewer={goToDocumentViewer}
-                retryDocumentProcessing={retryDocumentProcessing}
-              />
-            )}
+            <DocumentsView documents={filteredDocuments} />
           </>
         )}
       </div>

@@ -41,6 +41,7 @@ const eslintConfig = [
             "^@/components/(.*)$",
             "^@/hooks/(.*)$",
             "^@/lib/(.*)$",
+            "^@/store/(.*)$",
             "^@/prisma/(.*)$",
             "^@/types/(.*)$",
             "^[./](?!.*\\.css$)",

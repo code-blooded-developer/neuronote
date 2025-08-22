@@ -12,27 +12,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface DocumentFiltersProps {
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  selectedFilter: string;
-  setSelectedFilter: (filter: string) => void;
-  sortBy: string;
-  setSortBy: (sort: string) => void;
-  viewMode: "grid" | "list";
-  setViewMode: (mode: "grid" | "list") => void;
-}
+import { useDocumentStore } from "@/store/documents";
 
-export default function DocumentFilters({
-  searchQuery,
-  setSearchQuery,
-  selectedFilter,
-  setSelectedFilter,
-  sortBy,
-  setSortBy,
-  viewMode,
-  setViewMode,
-}: DocumentFiltersProps) {
+export default function DocumentFilters() {
+  const {
+    searchQuery,
+    setSearchQuery,
+    selectedFilter,
+    setSelectedFilter,
+    sortBy,
+    setSortBy,
+    viewMode,
+    setViewMode,
+  } = useDocumentStore();
   return (
     <div className="flex flex-col sm:flex-row gap-4">
       <div className="relative flex-1">

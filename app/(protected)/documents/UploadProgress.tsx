@@ -11,21 +11,14 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
-import { UploadStatus } from "@/types/document";
+import { useDocumentUploader } from "@/hooks/useDocumentUploader";
 
-interface UploadProgressProps {
-  uploadQueue: UploadStatus[];
-  setUploadQueue: React.Dispatch<React.SetStateAction<UploadStatus[]>>;
-  retryUpload: (id: string) => void;
-  isUploadActive: (id: string) => boolean;
-}
+import { useDocumentStore } from "@/store/documents";
 
-export default function UploadProgress({
-  uploadQueue,
-  setUploadQueue,
-  retryUpload,
-  isUploadActive,
-}: UploadProgressProps) {
+export default function UploadProgress() {
+  const { uploadQueue, setUploadQueue } = useDocumentStore();
+
+  const { retryUpload, isUploadActive } = useDocumentUploader();
   if (uploadQueue.length === 0) {
     return null;
   }
@@ -106,8 +99,8 @@ export default function UploadProgress({
                       size="sm"
                       variant="ghost"
                       onClick={() =>
-                        setUploadQueue((prev) =>
-                          prev.filter((item) => item.id !== upload.id)
+                        setUploadQueue(
+                          uploadQueue.filter((item) => item.id !== upload.id)
                         )
                       }
                     >
