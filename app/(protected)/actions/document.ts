@@ -105,13 +105,96 @@ export async function toggleStar(documentId: string) {
   });
 }
 
-export async function softDeleteDocument(documentId: string) {
+export async function trashDocument(documentId: string) {
   const user = await requireUser();
 
   return prisma.document.updateMany({
     where: { id: documentId, userId: user.id, deletedAt: null },
     data: { deletedAt: new Date() },
   });
+}
+
+export async function purgeDocument(documentId: string) {
+  const user = await requireUser();
+
+  // First, verify the document exists and belongs to the user
+  const doc = await prisma.document.findFirst({
+    where: { id: documentId, userId: user.id },
+  });
+
+  if (!doc) {
+    throw new Error("Document not found or access denied");
+  }
+
+  try {
+    // Use a transaction to ensure all operations succeed or fail together
+    await prisma.$transaction(async (tx) => {
+      // 1. Delete messages from chats that use this document
+      await tx.message.deleteMany({
+        where: {
+          chat: {
+            documents: {
+              some: { documentId },
+            },
+          },
+        },
+      });
+
+      // 2. Delete chat-document associations
+      await tx.chatDocument.deleteMany({
+        where: { documentId },
+      });
+
+      // 3. Delete chats that no longer have any documents (optional - you might want to keep empty chats)
+      await tx.chat.deleteMany({
+        where: {
+          userId: user.id,
+          documents: { none: {} }, // chats with no documents
+        },
+      });
+
+      // 4. Delete document chunks
+      await tx.documentChunk.deleteMany({
+        where: { documentId },
+      });
+
+      // 5. Remove document-tag associations (many-to-many relationship)
+      await tx.document.update({
+        where: { id: documentId },
+        data: {
+          tags: {
+            set: [], // Remove all tag associations
+          },
+        },
+      });
+
+      // 6. Finally, delete the document record
+      await tx.document.delete({
+        where: { id: documentId },
+      });
+    });
+
+    // 7. Delete file from Supabase storage (outside transaction as it's external)
+    const { error: storageError } = await supabase.storage
+      .from("documents")
+      .remove([doc.storagePath]);
+
+    if (storageError) {
+      console.error("Failed to delete file from storage:", storageError);
+    }
+
+    return {
+      success: true,
+      message: "Document and all related data permanently deleted",
+    };
+  } catch (error) {
+    console.error("Hard delete failed:", error);
+    throw new Error(
+      error instanceof Error
+        ? `Failed to delete document: ${error.message}`
+        : "Failed to delete document"
+    );
+  }
 }
 
 export async function getDocumentWithUrl(documentId: string) {

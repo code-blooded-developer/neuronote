@@ -8,8 +8,8 @@ import { useProgress } from "@bprogress/next";
 import { FileText, Plus, Upload } from "lucide-react";
 
 import {
+  purgeDocument,
   retryDocumentProcessing,
-  softDeleteDocument,
   toggleStar,
 } from "@/app/(protected)/actions/document";
 
@@ -84,7 +84,7 @@ export default function DocumentsClient({
     try {
       start();
 
-      await softDeleteDocument(documentId);
+      await purgeDocument(documentId);
       setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
 
       toast({
