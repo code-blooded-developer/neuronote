@@ -1,6 +1,6 @@
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 
-export async function splitTextWithLangchain(
+export async function createTextChunks(
   text: string,
   chunkSize = 1000,
   chunkOverlap = 200

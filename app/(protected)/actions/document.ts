@@ -5,9 +5,9 @@ import { DocumentStatus } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
 
-import { splitTextWithLangchain } from "@/lib/chunking";
-import { getDocEmbeddings } from "@/lib/embedding";
-import { parseDocument } from "@/lib/parsing";
+import { createTextChunks } from "@/lib/chunking";
+import { generateDocumentEmbeddings } from "@/lib/embedding";
+import { extractTextFromDocument } from "@/lib/parsing";
 import prisma from "@/lib/prisma";
 
 import { Document } from "@/types/document";
@@ -75,7 +75,7 @@ export async function createDocumentEntry(
     },
   });
 
-  parseAndStoreChunks(doc);
+  processDocumentContent(doc);
 
   return attachUrl(doc);
 }
@@ -121,20 +121,36 @@ export async function getDocumentWithUrl(documentId: string) {
   return attachUrl(doc);
 }
 
-export async function parseAndStoreChunks(doc: Omit<Document, "url">) {
+export async function processDocumentContent(doc: Document) {
   try {
     const { data, error } = await supabase.storage
       .from("documents")
       .download(doc.storagePath);
 
-    if (error || !data) throw error || new Error("File download failed");
+    if (error || !data) {
+      throw new Error(
+        `File download failed: ${error?.message || "Unknown error"}`
+      );
+    }
 
     const buffer = await data.arrayBuffer();
-    const text = await parseDocument(buffer, doc.mimeType);
+    const text = await extractTextFromDocument(buffer, doc.mimeType);
 
-    const chunks = await splitTextWithLangchain(text);
+    if (!text || text.trim().length === 0) {
+      throw new Error("Document text extraction resulted in empty content");
+    }
 
-    const embeddings = await getDocEmbeddings(chunks);
+    const chunks = await createTextChunks(text);
+
+    if (!chunks || chunks.length === 0) {
+      throw new Error("Text chunking resulted in no chunks");
+    }
+
+    const embeddings = await generateDocumentEmbeddings(chunks);
+
+    if (!embeddings || embeddings.length !== chunks.length) {
+      throw new Error("Vector embedding generation failed or length mismatch");
+    }
 
     await prisma.$transaction(
       chunks.map(
@@ -155,15 +171,46 @@ export async function parseAndStoreChunks(doc: Omit<Document, "url">) {
 
     return { success: true, chunks: chunks.length };
   } catch (err) {
-    console.error("Parsing failed:", err);
+    console.error("Document processing failed:", err);
 
     await prisma.document.update({
       where: { id: doc.id },
       data: { status: DocumentStatus.error },
     });
 
-    return { success: false, error: "Failed to parse document" };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to process document",
+    };
   }
+}
+
+export async function retryDocumentProcessing(documentId: string) {
+  const user = await requireUser();
+
+  const doc = await prisma.document.findFirst({
+    where: {
+      id: documentId,
+      userId: user.id,
+      deletedAt: null,
+      status: { in: [DocumentStatus.error] },
+    },
+  });
+
+  if (!doc) {
+    throw new Error("Document not found or cannot be retried");
+  }
+
+  await prisma.document.update({
+    where: { id: documentId },
+    data: { status: DocumentStatus.processing },
+  });
+
+  await prisma.documentChunk.deleteMany({
+    where: { documentId },
+  });
+
+  return processDocumentContent(doc);
 }
 
 export async function getUserReadyDocuments() {

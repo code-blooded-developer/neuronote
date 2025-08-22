@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { MessageRole } from "@prisma/client";
 
 import { getChatResponse } from "@/lib/chat";
-import { getQueryEmbeddings } from "@/lib/embedding";
+import { generateQueryEmbeddings } from "@/lib/embedding";
 import prisma from "@/lib/prisma";
 
 export async function queryDocuments(
@@ -46,7 +46,7 @@ export async function queryDocuments(
     },
   });
 
-  const queryEmbedding = await getQueryEmbeddings(query);
+  const queryEmbedding = await generateQueryEmbeddings(query);
 
   let filterClause = "";
   const params: (string | number[])[] = [queryEmbedding, session.user.id];

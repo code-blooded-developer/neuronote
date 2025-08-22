@@ -2,7 +2,7 @@ import mammoth from "mammoth";
 // @ts-expect-error this library does not export types
 import pdfParse from "pdf-parse-fixed";
 
-export async function parseDocument(
+export async function extractTextFromDocument(
   buffer: ArrayBuffer,
   mimeType: string
 ): Promise<string> {

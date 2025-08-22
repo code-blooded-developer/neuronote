@@ -8,6 +8,7 @@ import {
   FileText,
   Loader2,
   MoreHorizontal,
+  RotateCcw,
   Star,
   Trash2,
   XCircle,
@@ -39,6 +40,7 @@ interface DocumentViewProps {
   deleteDocument: (id: string) => void;
   toggleDocumentStar: (id: string) => void;
   goToDocumentViewer: (id: string) => void;
+  retryDocumentProcessing: (id: string) => void;
 }
 
 type DocumentActionsProps = Omit<DocumentViewProps, "documents"> & {
@@ -112,6 +114,7 @@ function DocumentActions({
   goToDocumentViewer,
   toggleDocumentStar,
   deleteDocument,
+  retryDocumentProcessing,
 }: DocumentActionsProps) {
   return (
     <DropdownMenu>
@@ -129,6 +132,19 @@ function DocumentActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        {doc.status === DocumentStatus.error && (
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onSelect={(e) => {
+              e.preventDefault();
+              retryDocumentProcessing(doc.id);
+            }}
+          >
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Retry
+          </DropdownMenuItem>
+        )}
+
         <DropdownMenuItem
           className="cursor-pointer"
           disabled={doc.status !== DocumentStatus.ready}
@@ -190,6 +206,7 @@ export function GridView({
   deleteDocument,
   goToDocumentViewer,
   toggleDocumentStar,
+  retryDocumentProcessing,
 }: DocumentViewProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -222,6 +239,7 @@ export function GridView({
                 goToDocumentViewer={goToDocumentViewer}
                 toggleDocumentStar={toggleDocumentStar}
                 deleteDocument={deleteDocument}
+                retryDocumentProcessing={retryDocumentProcessing}
               />
             </div>
           </CardHeader>
@@ -262,6 +280,7 @@ export function ListView({
   deleteDocument,
   goToDocumentViewer,
   toggleDocumentStar,
+  retryDocumentProcessing,
 }: DocumentViewProps) {
   return (
     <div className="space-y-2">
@@ -304,6 +323,7 @@ export function ListView({
                 goToDocumentViewer={goToDocumentViewer}
                 toggleDocumentStar={toggleDocumentStar}
                 deleteDocument={deleteDocument}
+                retryDocumentProcessing={retryDocumentProcessing}
               />
             </div>
           </CardContent>

@@ -8,6 +8,7 @@ import { useProgress } from "@bprogress/next";
 import { FileText, Plus, Upload } from "lucide-react";
 
 import {
+  retryDocumentProcessing,
   softDeleteDocument,
   toggleStar,
 } from "@/app/(protected)/actions/document";
@@ -217,6 +218,7 @@ export default function DocumentsClient({
                 deleteDocument={deleteDocument}
                 toggleDocumentStar={toggleDocumentStar}
                 goToDocumentViewer={goToDocumentViewer}
+                retryDocumentProcessing={retryDocumentProcessing}
               />
             ) : (
               <ListView
@@ -224,6 +226,7 @@ export default function DocumentsClient({
                 deleteDocument={deleteDocument}
                 toggleDocumentStar={toggleDocumentStar}
                 goToDocumentViewer={goToDocumentViewer}
+                retryDocumentProcessing={retryDocumentProcessing}
               />
             )}
           </>

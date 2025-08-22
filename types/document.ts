@@ -30,3 +30,5 @@ export interface UploadStatus {
   retryAttempt?: number;
   isRetrying?: boolean;
 }
+
+export type EmbeddingType = "document" | "query";
