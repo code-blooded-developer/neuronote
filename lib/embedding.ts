@@ -12,17 +12,44 @@ async function generateEmbeddings(
 ): Promise<number[] | number[][]> {
   try {
     const texts = Array.isArray(input) ? input : [input];
+    const BATCH_SIZE = 96; // Cohere's limit
 
-    const response = await cohere.v2.embed({
-      texts,
-      model: "embed-v4.0",
-      inputType: type === "document" ? "search_document" : "search_query",
-      embeddingTypes: ["float"],
-    });
+    // If input is small enough, process normally
+    if (texts.length <= BATCH_SIZE) {
+      const response = await cohere.v2.embed({
+        texts,
+        model: "embed-v4.0",
+        inputType: type === "document" ? "search_document" : "search_query",
+        embeddingTypes: ["float"],
+      });
 
-    const embeddings = response.embeddings.float || [];
+      const embeddings = response.embeddings.float || [];
+      return Array.isArray(input) ? embeddings : embeddings[0] || [];
+    }
 
-    return Array.isArray(input) ? embeddings : embeddings[0] || [];
+    // Process in batches for large inputs
+    const allEmbeddings: number[][] = [];
+
+    for (let i = 0; i < texts.length; i += BATCH_SIZE) {
+      const batch = texts.slice(i, i + BATCH_SIZE);
+
+      const response = await cohere.v2.embed({
+        texts: batch,
+        model: "embed-v4.0",
+        inputType: type === "document" ? "search_document" : "search_query",
+        embeddingTypes: ["float"],
+      });
+
+      const batchEmbeddings = response.embeddings.float || [];
+      allEmbeddings.push(...batchEmbeddings);
+
+      // Optional: Add a small delay between batches to avoid rate limiting
+      if (i + BATCH_SIZE < texts.length) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+    }
+
+    return Array.isArray(input) ? allEmbeddings : allEmbeddings[0] || [];
   } catch (err) {
     console.error("Cohere embedding error:", err);
     return Array.isArray(input) ? [] : [];
