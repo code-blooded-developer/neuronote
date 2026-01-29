@@ -91,6 +91,18 @@ export async function getUserDocuments() {
   return Promise.all(docs.map(attachUrl));
 }
 
+export async function getRecentDocuments() {
+  const user = await requireUser();
+
+  const docs = await prisma.document.findMany({
+    where: { userId: user.id, deletedAt: null },
+    orderBy: { createdAt: "desc" },
+    take: 8,
+  });
+
+  return Promise.all(docs.map(attachUrl));
+}
+
 export async function toggleStar(documentId: string) {
   const user = await requireUser();
 

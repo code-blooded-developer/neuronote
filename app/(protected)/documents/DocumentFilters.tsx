@@ -14,7 +14,11 @@ import {
 
 import { useDocumentStore } from "@/store/documents";
 
-export default function DocumentFilters() {
+export default function DocumentFilters({
+  needsSorting = true,
+}: {
+  needsSorting?: boolean;
+}) {
   const {
     searchQuery,
     setSearchQuery,
@@ -48,16 +52,18 @@ export default function DocumentFilters() {
           </SelectContent>
         </Select>
 
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="recent">Recent</SelectItem>
-            <SelectItem value="name">Name</SelectItem>
-            <SelectItem value="size">Size</SelectItem>
-          </SelectContent>
-        </Select>
+        {needsSorting && (
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Recent</SelectItem>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="size">Size</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
 
         <div className="flex border rounded-md">
           <Button
