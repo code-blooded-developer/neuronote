@@ -44,7 +44,7 @@ export function useDocumentUploader() {
       id: string,
       fileName: string,
       error: string,
-      canRetry: boolean = false
+      canRetry: boolean = false,
     ) => {
       // Remove from active uploads on error
       activeUploadsRef.current.delete(id);
@@ -62,14 +62,14 @@ export function useDocumentUploader() {
         variant: "destructive",
       });
     },
-    [updateUploadQueue]
+    [updateUploadQueue],
   );
 
   // Exponential backoff delay calculation
   const calculateDelay = useCallback((attempt: number): number => {
     const delay = Math.min(
       RETRY_CONFIG.baseDelay * Math.pow(2, attempt),
-      RETRY_CONFIG.maxDelay
+      RETRY_CONFIG.maxDelay,
     );
     // Add jitter to prevent thundering herd
     return delay + Math.random() * 1000;
@@ -80,7 +80,7 @@ export function useDocumentUploader() {
     async (
       file: File,
       uploadStatus: UploadStatus,
-      attempt: number = 0
+      attempt: number = 0,
     ): Promise<void> => {
       // Check if upload is already active
       if (activeUploadsRef.current.has(uploadStatus.id)) {
@@ -93,7 +93,7 @@ export function useDocumentUploader() {
       try {
         // Get signed URL (may need refresh on retry)
         const { signedUrl, path, documentId } = await getSignedUploadUrl(
-          file.name
+          file.name,
         );
 
         // Update upload status with current attempt info
@@ -121,7 +121,7 @@ export function useDocumentUploader() {
           xhr.onload = async () => {
             if (xhr.status !== 200) {
               return reject(
-                new Error(`Upload failed with status ${xhr.status}`)
+                new Error(`Upload failed with status ${xhr.status}`),
               );
             }
 
@@ -188,11 +188,11 @@ export function useDocumentUploader() {
         // Remove from active uploads on error
         activeUploadsRef.current.delete(uploadStatus.id);
         throw new Error(
-          error instanceof Error ? error.message : "Unknown error"
+          error instanceof Error ? error.message : "Unknown error",
         );
       }
     },
-    [updateUploadQueue, addDocument, removeFromUploadQueue, updateDocument]
+    [updateUploadQueue, addDocument, removeFromUploadQueue, updateDocument],
   );
 
   // Retry mechanism with exponential backoff
@@ -210,7 +210,7 @@ export function useDocumentUploader() {
 
           console.warn(
             `Upload attempt ${attempt + 1} failed:`,
-            lastError.message
+            lastError.message,
           );
 
           // Don't retry on the last attempt
@@ -228,7 +228,7 @@ export function useDocumentUploader() {
 
           // Wait before retrying
           await new Promise((resolve) =>
-            setTimeout(resolve, calculateDelay(attempt))
+            setTimeout(resolve, calculateDelay(attempt)),
           );
 
           // Reset progress for retry
@@ -241,10 +241,10 @@ export function useDocumentUploader() {
         uploadStatus.id,
         file.name,
         `Upload failed after ${RETRY_CONFIG.maxRetries + 1} attempts: ${lastError.message}`,
-        true // Can still manually retry
+        true, // Can still manually retry
       );
     },
-    [uploadFile, calculateDelay, updateUploadQueue, handleError]
+    [uploadFile, calculateDelay, updateUploadQueue, handleError],
   );
 
   // Manual retry function
@@ -284,10 +284,10 @@ export function useDocumentUploader() {
             return resetItem;
           }
           return item;
-        })
+        }),
       );
     },
-    [uploadQueue, setUploadQueue, uploadWithRetry]
+    [uploadQueue, setUploadQueue, uploadWithRetry],
   );
 
   const onDrop = useCallback(
@@ -329,7 +329,7 @@ export function useDocumentUploader() {
         });
       }
     },
-    [uploadWithRetry, addToUploadQueue]
+    [uploadWithRetry, addToUploadQueue],
   );
 
   const dropzoneProps = useDropzone({

@@ -2,7 +2,7 @@ import { z } from "zod";
 
 function passwordRefineCallback(
   data: { password: string; confirmPassword: string },
-  ctx: z.RefinementCtx
+  ctx: z.RefinementCtx,
 ) {
   const { password, confirmPassword } = data;
 

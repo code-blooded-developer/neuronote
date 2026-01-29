@@ -82,7 +82,7 @@ const AIChat = () => {
   useEffect(() => {
     if (selectedChat) {
       setSelectedDocuments(
-        documents.filter((doc) => selectedChat.documentIds.includes(doc.id))
+        documents.filter((doc) => selectedChat.documentIds.includes(doc.id)),
       );
 
       const fetchMessages = async () => {
@@ -117,7 +117,7 @@ const AIChat = () => {
     const chat = await queryDocuments(
       inputValue,
       selectedDocuments.map((doc) => doc.id),
-      selectedChat?.id
+      selectedChat?.id,
     );
 
     const aiMessage: Omit<Message, "chatId"> = {
@@ -147,13 +147,13 @@ const AIChat = () => {
     const documentsToAdd = documents.filter(
       (doc) =>
         documentIds.includes(doc.id) &&
-        !selectedDocuments.some((selected) => selected.id === doc.id)
+        !selectedDocuments.some((selected) => selected.id === doc.id),
     );
     setSelectedDocuments((prev) => [...prev, ...documentsToAdd]);
   };
 
   const filteredDocuments = documents.filter((doc) =>
-    doc.fileName.toLowerCase().includes(searchQuery.toLowerCase())
+    doc.fileName.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -189,7 +189,7 @@ const AIChat = () => {
                   <div className="space-y-2">
                     {filteredDocuments.map((doc) => {
                       const isSelected = selectedDocuments.some(
-                        (selected) => selected.id === doc.id
+                        (selected) => selected.id === doc.id,
                       );
                       return (
                         <div

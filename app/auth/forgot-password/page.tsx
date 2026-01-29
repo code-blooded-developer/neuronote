@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 
 import Link from "next/link";
 
@@ -22,7 +22,7 @@ import { forgotPasswordAction } from "../actions";
 export default function ForgotPassword() {
   const [state, action, pending] = useActionState(
     forgotPasswordAction,
-    undefined
+    undefined,
   );
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -31,6 +31,12 @@ export default function ForgotPassword() {
       setIsSuccess(true);
     }
   }, [state]);
+
+  const emailRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    emailRef.current?.focus();
+  }, []);
 
   if (isSuccess) {
     return (
@@ -101,6 +107,7 @@ export default function ForgotPassword() {
             <div className="space-y-2">
               <Label htmlFor="email">Email address</Label>
               <Input
+                ref={emailRef}
                 id="email"
                 type="email"
                 name="email"
@@ -108,7 +115,6 @@ export default function ForgotPassword() {
                 defaultValue={state?.values?.email ?? ""}
                 disabled={pending}
                 className={state?.errors?.email ? "border-destructive" : ""}
-                autoFocus
               />
               {state?.errors?.email && (
                 <p className="text-sm text-destructive">{state.errors.email}</p>

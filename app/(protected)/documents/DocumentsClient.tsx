@@ -36,14 +36,14 @@ export default function DocumentsClient({
     switch (sortBy) {
       case "name":
         return [...documents].sort((a, b) =>
-          a.fileName.localeCompare(b.fileName)
+          a.fileName.localeCompare(b.fileName),
         );
       case "size":
         return [...documents].sort((a, b) => a.size - b.size);
       case "recent":
         return [...documents].sort(
           (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         );
       default:
         return documents;
@@ -59,7 +59,7 @@ export default function DocumentsClient({
         selectedFilter === "all" ||
         (selectedFilter === "starred" && doc.isStarred);
       return matchesSearch && matchesFilter;
-    })
+    }),
   );
 
   return (

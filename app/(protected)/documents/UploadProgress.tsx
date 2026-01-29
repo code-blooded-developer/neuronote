@@ -24,11 +24,11 @@ export default function UploadProgress() {
   }
 
   const uploadingCount = uploadQueue.filter(
-    (u) => u.status === DocumentStatus.uploading
+    (u) => u.status === DocumentStatus.uploading,
   ).length;
 
   const completedCount = uploadQueue.filter(
-    (u) => u.status === DocumentStatus.ready
+    (u) => u.status === DocumentStatus.ready,
   ).length;
 
   return (
@@ -100,7 +100,7 @@ export default function UploadProgress() {
                       variant="ghost"
                       onClick={() =>
                         setUploadQueue(
-                          uploadQueue.filter((item) => item.id !== upload.id)
+                          uploadQueue.filter((item) => item.id !== upload.id),
                         )
                       }
                     >

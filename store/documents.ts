@@ -41,13 +41,13 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   updateDocument: (updatedDoc) =>
     set((state) => ({
       documents: state.documents.map((doc) =>
-        doc.id === updatedDoc.id ? { ...doc, ...updatedDoc } : doc
+        doc.id === updatedDoc.id ? { ...doc, ...updatedDoc } : doc,
       ),
     })),
   toggleFavorite: (documentId: string) =>
     set((state) => ({
       documents: state.documents.map((doc) =>
-        doc.id === documentId ? { ...doc, isStarred: !doc.isStarred } : doc
+        doc.id === documentId ? { ...doc, isStarred: !doc.isStarred } : doc,
       ),
     })),
   removeDocument: (id) =>
@@ -68,7 +68,7 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   updateUploadQueue: (id, updates) =>
     set((state) => ({
       uploadQueue: state.uploadQueue.map((item) =>
-        item.id === id ? { ...item, ...updates } : item
+        item.id === id ? { ...item, ...updates } : item,
       ),
     })),
   removeFromUploadQueue: (id) =>

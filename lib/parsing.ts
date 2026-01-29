@@ -4,7 +4,7 @@ import pdfParse from "pdf-parse-fixed";
 
 export async function extractTextFromDocument(
   buffer: ArrayBuffer,
-  mimeType: string
+  mimeType: string,
 ): Promise<string> {
   const nodeBuffer = Buffer.from(buffer);
 

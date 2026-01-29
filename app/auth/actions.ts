@@ -1,26 +1,27 @@
 "use server";
 
+import { CredentialsSignin } from "next-auth";
+
 import { signIn, signOut } from "@/auth";
 import { compare, hash } from "bcryptjs";
 import crypto from "crypto";
-import { CredentialsSignin } from "next-auth";
 
 import { sendPasswordResetEmail, sendVerificationEmail } from "@/lib/mailer";
 import prisma from "@/lib/prisma";
 import {
   ForgotPasswordFormState,
-  ResetPasswordFormState,
-  SignInFormState,
-  SignUpFormState,
   forgotPasswordSchema,
+  ResetPasswordFormState,
   resetPasswordSchema,
+  SignInFormState,
   signInSchema,
+  SignUpFormState,
   signUpSchema,
 } from "@/lib/validation";
 
 export async function signUpAction(
   _: SignUpFormState | undefined,
-  formData: FormData
+  formData: FormData,
 ): Promise<SignUpFormState> {
   const data = {
     name: formData.get("name")?.toString() ?? "",
@@ -72,7 +73,7 @@ export async function signUpAction(
 
 export async function signInAction(
   _: SignInFormState | undefined,
-  formData: FormData
+  formData: FormData,
 ): Promise<SignInFormState> {
   const data = {
     email: formData.get("email")?.toString() ?? "",
@@ -101,7 +102,7 @@ export async function signInAction(
     };
   } catch (error: unknown) {
     console.error(
-      error instanceof CredentialsSignin ? error.message : "Unexpected error"
+      error instanceof CredentialsSignin ? error.message : "Unexpected error",
     );
     return {
       ok: false,
@@ -119,7 +120,7 @@ export async function signInAction(
 
 export async function forgotPasswordAction(
   _: ForgotPasswordFormState | undefined,
-  formData: FormData
+  formData: FormData,
 ): Promise<ForgotPasswordFormState> {
   const data = {
     email: formData.get("email")?.toString() ?? "",
@@ -157,7 +158,7 @@ export async function forgotPasswordAction(
 
 export async function resetPasswordAction(
   _: ResetPasswordFormState | undefined,
-  formData: FormData
+  formData: FormData,
 ): Promise<ResetPasswordFormState> {
   const data = {
     token: formData.get("token")?.toString() ?? "",

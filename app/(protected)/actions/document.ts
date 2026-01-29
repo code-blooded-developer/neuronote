@@ -13,8 +13,8 @@ import prisma from "@/lib/prisma";
 import { Document } from "@/types/document";
 
 const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
 async function requireUser() {
@@ -40,7 +40,7 @@ async function attachUrl(doc: Omit<Document, "url">) {
 }
 
 export async function getSignedUploadUrl(
-  fileName: string
+  fileName: string,
 ): Promise<{ signedUrl: string; path: string; documentId: string }> {
   const user = await requireUser();
 
@@ -59,7 +59,7 @@ export async function getSignedUploadUrl(
 export async function createDocumentEntry(
   documentId: string,
   path: string,
-  file: { name: string; type: string; size: number }
+  file: { name: string; type: string; size: number },
 ) {
   const user = await requireUser();
 
@@ -192,7 +192,7 @@ export async function purgeDocument(documentId: string) {
     throw new Error(
       error instanceof Error
         ? `Failed to delete document: ${error.message}`
-        : "Failed to delete document"
+        : "Failed to delete document",
     );
   }
 }
@@ -212,7 +212,7 @@ export async function processDocumentContent(doc: Document) {
 
     if (error || !data) {
       throw new Error(
-        `File download failed: ${error?.message || "Unknown error"}`
+        `File download failed: ${error?.message || "Unknown error"}`,
       );
     }
 
@@ -243,8 +243,8 @@ export async function processDocumentContent(doc: Document) {
       VALUES (${crypto.randomUUID()}, ${doc.id}, ${chunk}, ${
         embeddings[i]
       }, NOW())
-    `
-      )
+    `,
+      ),
     );
 
     await prisma.document.update({

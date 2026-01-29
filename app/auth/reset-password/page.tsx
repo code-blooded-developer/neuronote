@@ -30,7 +30,7 @@ export default function ResetPasswordPage({
 
   const [state, action, pending] = useActionState(
     resetPasswordAction,
-    undefined
+    undefined,
   );
   const [showPassword, setShowPassword] = useState(false);
 

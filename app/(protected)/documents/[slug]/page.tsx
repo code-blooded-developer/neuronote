@@ -55,8 +55,9 @@ export default function DocumentViewer({
     ) {
       return (
         <iframe
+          title={document.fileName}
           src={`https://docs.google.com/gview?url=${encodeURIComponent(
-            document.url
+            document.url,
           )}&embedded=true`}
           className="w-full h-[90vh] border rounded"
         />

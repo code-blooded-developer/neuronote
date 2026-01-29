@@ -10,7 +10,7 @@ import prisma from "@/lib/prisma";
 export async function queryDocuments(
   query: string,
   documentIds?: string[],
-  chatId?: string
+  chatId?: string,
 ) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
@@ -77,7 +77,7 @@ export async function queryDocuments(
     ORDER BY c.embedding <-> $1::vector
     LIMIT 5;
   `,
-    ...params
+    ...params,
   );
 
   const context = results
@@ -85,7 +85,7 @@ export async function queryDocuments(
     .join("\n\n");
 
   const chatResponse = await getChatResponse(
-    `Use ONLY the following context to answer the question. If the answer is not present, say "I don't know".\n\nContext:\n${context}\n\nQuestion: ${query}`
+    `Use ONLY the following context to answer the question. If the answer is not present, say "I don't know".\n\nContext:\n${context}\n\nQuestion: ${query}`,
   );
 
   await prisma.message.create({

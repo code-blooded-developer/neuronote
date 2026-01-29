@@ -8,7 +8,7 @@ const cohere = new CohereClient({
 
 async function generateEmbeddings(
   input: string | string[],
-  type: EmbeddingType = "document"
+  type: EmbeddingType = "document",
 ): Promise<number[] | number[][]> {
   try {
     const texts = Array.isArray(input) ? input : [input];
@@ -57,13 +57,13 @@ async function generateEmbeddings(
 }
 
 export async function generateDocumentEmbeddings(
-  texts: string[]
+  texts: string[],
 ): Promise<number[][]> {
   return generateEmbeddings(texts, "document") as Promise<number[][]>;
 }
 
 export async function generateQueryEmbeddings(
-  query: string
+  query: string,
 ): Promise<number[]> {
   return generateEmbeddings(query, "query") as Promise<number[]>;
 }
