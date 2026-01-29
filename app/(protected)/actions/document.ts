@@ -141,46 +141,36 @@ export async function purgeDocument(documentId: string) {
   try {
     // Use a transaction to ensure all operations succeed or fail together
     await prisma.$transaction(async (tx) => {
-      // 1. Delete messages from chats that use this document
-      await tx.message.deleteMany({
-        where: {
-          chat: {
-            documents: {
-              some: { documentId },
-            },
-          },
-        },
-      });
-
-      // 2. Delete chat-document associations
-      await tx.chatDocument.deleteMany({
-        where: { documentId },
-      });
-
-      // 3. Delete chats that no longer have any documents (optional - you might want to keep empty chats)
-      await tx.chat.deleteMany({
+      // 1. Find chats that use ONLY this document
+      const chatsToDelete = await tx.chat.findMany({
         where: {
           userId: user.id,
-          documents: { none: {} }, // chats with no documents
+          AND: [
+            { documents: { some: { documentId } } }, // must reference this document
+            { documents: { every: { documentId } } }, // must reference ONLY this document
+          ],
         },
+        select: { id: true },
       });
 
-      // 4. Delete document chunks
-      await tx.documentChunk.deleteMany({
-        where: { documentId },
-      });
+      // 2. Delete those chats first (this will also delete Messages)
+      if (chatsToDelete.length > 0) {
+        await tx.chat.deleteMany({
+          where: {
+            id: { in: chatsToDelete.map((c) => c.id) },
+          },
+        });
+      }
 
-      // 5. Remove document-tag associations (many-to-many relationship)
+      // 3. Remove document–tag relations
       await tx.document.update({
         where: { id: documentId },
         data: {
-          tags: {
-            set: [], // Remove all tag associations
-          },
+          tags: { set: [] },
         },
       });
 
-      // 6. Finally, delete the document record
+      // 4. Finally delete the document
       await tx.document.delete({
         where: { id: documentId },
       });

@@ -110,7 +110,7 @@ model DocumentTag {
 model DocumentChunk {
   id         String                @id @default(cuid())
   documentId String
-  document   Document              @relation(fields: [documentId], references: [id])
+  document   Document              @relation(fields: [documentId], references: [id], onDelete: Cascade)
   content    String // text chunk
   embedding  Unsupported("vector")
   createdAt  DateTime              @default(now())
@@ -140,8 +140,8 @@ model ChatDocument {
   id         String   @id @default(cuid())
   chatId     String
   documentId String
-  chat       Chat     @relation(fields: [chatId], references: [id])
-  document   Document @relation(fields: [documentId], references: [id])
+  chat       Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -153,7 +153,7 @@ model ChatDocument {
 model Message {
   id     String @id @default(cuid())
   chatId String
-  chat   Chat   @relation(fields: [chatId], references: [id])
+  chat   Chat   @relation(fields: [chatId], references: [id], onDelete: Cascade)
 
   role      MessageRole // "user" or "assistant"
   content   String

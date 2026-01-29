@@ -2,11 +2,9 @@
 
 import { useEffect } from "react";
 
-import Link from "next/link";
-
 import { useSession } from "next-auth/react";
 
-import { Brain, Plus, Search, Upload } from "lucide-react";
+import { Brain, Upload } from "lucide-react";
 
 import DocumentFilters from "@/app/(protected)/documents/DocumentFilters";
 import DocumentsView from "@/app/(protected)/documents/DocumentsView";
@@ -147,11 +145,11 @@ export default function DashboardClient({
               <CardHeader>
                 <CardTitle>Getting Started</CardTitle>
                 <CardDescription>
-                  Here&apos;s how DocuMind can help you work smarter
+                  Here&apos;s how NeuroNote can help you work smarter
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="text-center p-4">
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
                       <Upload className="h-6 w-6 text-primary" />
@@ -168,15 +166,6 @@ export default function DashboardClient({
                     <h3 className="font-medium mb-2">2. Ask Questions</h3>
                     <p className="text-sm text-muted-foreground">
                       Chat with AI to extract insights from your documents
-                    </p>
-                  </div>
-                  <div className="text-center p-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                      <Plus className="h-6 w-6 text-primary" />
-                    </div>
-                    <h3 className="font-medium mb-2">3. Organize & Discover</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Create collections and find connections across documents
                     </p>
                   </div>
                 </div>
@@ -209,44 +198,6 @@ export default function DashboardClient({
                 )}
               </CardContent>
             </Card>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Link href="/collections">
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-6 text-center">
-                    <Plus className="h-8 w-8 mx-auto mb-3 text-primary" />
-                    <h3 className="font-medium mb-2">Create Collection</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Organize your documents into smart collections
-                    </p>
-                  </CardContent>
-                </Card>
-              </Link>
-
-              <Link href="/chat">
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-6 text-center">
-                    <Brain className="h-8 w-8 mx-auto mb-3 text-primary" />
-                    <h3 className="font-medium mb-2">Ask AI</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Get insights from your documents
-                    </p>
-                  </CardContent>
-                </Card>
-              </Link>
-
-              <Link href="/chat">
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-6 text-center">
-                    <Search className="h-8 w-8 mx-auto mb-3 text-primary" />
-                    <h3 className="font-medium mb-2">Search</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Find exactly what you&apos;re looking for
-                    </p>
-                  </CardContent>
-                </Card>
-              </Link>
-            </div>
           </>
         )}
       </div>

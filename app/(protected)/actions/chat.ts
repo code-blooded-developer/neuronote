@@ -7,6 +7,70 @@ import { getChatResponse } from "@/lib/chat";
 import { generateQueryEmbeddings } from "@/lib/embedding";
 import prisma from "@/lib/prisma";
 
+export async function createEmptyChat(title: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const chat = await prisma.chat.create({
+    data: {
+      userId: session.user.id,
+      title: title.slice(0, 50),
+    },
+  });
+
+  return {
+    id: chat.id,
+    title: chat.title,
+    createdAt: chat.createdAt,
+    updatedAt: chat.updatedAt,
+    userId: chat.userId,
+    documentIds: [],
+  };
+}
+
+export async function deleteChat(chatId: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const chat = await prisma.chat.findUnique({
+    where: { id: chatId, userId: session.user.id },
+  });
+
+  if (!chat) throw new Error("Chat not found");
+
+  await prisma.chat.delete({
+    where: { id: chatId },
+  });
+
+  return { success: true };
+}
+
+export async function renameChat(chatId: string, newTitle: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const chat = await prisma.chat.findUnique({
+    where: { id: chatId, userId: session.user.id },
+  });
+
+  if (!chat) throw new Error("Chat not found");
+
+  const updatedChat = await prisma.chat.update({
+    where: { id: chatId },
+    data: { title: newTitle.slice(0, 50) },
+    include: { documents: { include: { document: true } } },
+  });
+
+  return {
+    id: updatedChat.id,
+    title: updatedChat.title,
+    createdAt: updatedChat.createdAt,
+    updatedAt: updatedChat.updatedAt,
+    userId: updatedChat.userId,
+    documentIds: updatedChat.documents.map((doc) => doc.document.id),
+  };
+}
+
 export async function queryDocuments(
   query: string,
   documentIds?: string[],
@@ -18,7 +82,18 @@ export async function queryDocuments(
   const chat = chatId
     ? await prisma.chat.findUnique({
         where: { id: chatId },
-        include: { documents: { include: { document: true } } },
+        select: {
+          id: true,
+          userId: true,
+          title: true,
+          createdAt: true,
+          updatedAt: true,
+          documents: {
+            select: {
+              documentId: true,
+            },
+          },
+        },
       })
     : await prisma.chat.create({
         data: {
@@ -33,10 +108,42 @@ export async function queryDocuments(
                 }
               : undefined,
         },
-        include: { documents: { include: { document: true } } },
+        select: {
+          id: true,
+          userId: true,
+          title: true,
+          createdAt: true,
+          updatedAt: true,
+          documents: {
+            select: {
+              documentId: true,
+            },
+          },
+        },
       });
 
   if (!chat) throw new Error("Chat not found");
+
+  const normalizedChat = {
+    ...chat,
+    documentIds: chat.documents.map((d) => d.documentId),
+  };
+
+  if (chatId && documentIds && documentIds.length > 0) {
+    const existingIds = new Set(chat.documents.map((d) => d.documentId));
+
+    const newDocumentIds = documentIds.filter((id) => !existingIds.has(id));
+
+    if (newDocumentIds.length > 0) {
+      await prisma.chatDocument.createMany({
+        data: newDocumentIds.map((id) => ({
+          chatId: chat.id,
+          documentId: id,
+        })),
+        skipDuplicates: true,
+      });
+    }
+  }
 
   await prisma.message.create({
     data: {
@@ -97,7 +204,7 @@ export async function queryDocuments(
   });
 
   return {
-    chatId: chat.id,
+    chat: normalizedChat,
     answer: chatResponse,
     sources: results.map((r) => ({
       chunkId: r.id,
@@ -114,12 +221,15 @@ export async function getUserChats() {
   const chats = await prisma.chat.findMany({
     where: { userId: session.user.id },
     orderBy: { createdAt: "desc" },
-    include: {
+    select: {
+      id: true,
+      userId: true,
+      title: true,
+      createdAt: true,
+      updatedAt: true,
       documents: {
         select: {
-          document: {
-            select: { id: true },
-          },
+          documentId: true,
         },
       },
     },
@@ -128,10 +238,10 @@ export async function getUserChats() {
   return chats.map((chat) => ({
     id: chat.id,
     title: chat.title,
+    userId: chat.userId,
     createdAt: chat.createdAt,
     updatedAt: chat.updatedAt,
-    userId: chat.userId,
-    documentIds: chat.documents.map((doc) => doc.document.id),
+    documentIds: chat.documents.map((d) => d.documentId),
   }));
 }
 
