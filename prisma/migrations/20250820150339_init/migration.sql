@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS vector;
+
 -- CreateEnum
 CREATE TYPE "public"."DocumentStatus" AS ENUM ('uploading', 'processing', 'ready', 'error');
 
