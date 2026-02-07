@@ -5,15 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { useSession } from "next-auth/react";
 
-import {
-  Brain,
-  FileText,
-  FolderOpen,
-  Home,
-  LogOut,
-  MessageSquare,
-  Settings,
-} from "lucide-react";
+import { Brain, FileText, Home, LogOut, MessageSquare } from "lucide-react";
 
 import { signOutAction } from "@/app/auth/actions";
 
@@ -23,7 +15,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -43,9 +34,7 @@ import {
 const navigationItems = [
   { title: "Home", url: "/dashboard", icon: Home },
   { title: "My Documents", url: "/documents", icon: FileText },
-  { title: "Collections", url: "/collections", icon: FolderOpen },
   { title: "AI Chat", url: "/chat", icon: MessageSquare },
-  { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -119,11 +108,6 @@ export function AppSidebar() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem className="cursor-pointer">
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive cursor-pointer"
               onClick={() => signOutAction()}
