@@ -15,3 +15,5 @@ export default async function DashboardPage() {
 
   return <DashboardClient recentDocuments={documents} />;
 }
+
+export const dynamic = "force-dynamic";
