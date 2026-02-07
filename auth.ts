@@ -39,7 +39,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!user) throw new CredentialsSignin("No user found with this email");
         if (!user.emailVerified) {
           throw new CredentialsSignin(
-            "Please verify your email before logging in."
+            "Please verify your email before logging in.",
           );
         }
         if (!user.passwordHash)
