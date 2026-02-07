@@ -12,7 +12,7 @@ Your Second Brain for Every Document — an AI-powered knowledge base for upload
 
 - **React** — UI framework
 - **TypeScript** — Type-safe JavaScript
-- **Vite** — Fast build tool and dev server
+- **Turbopack** — Fast build tool and dev server
 - **Tailwind CSS** — Utility-first CSS framework
 - **radix-ui** — Accessible component library
 - **zustand** — State Management
