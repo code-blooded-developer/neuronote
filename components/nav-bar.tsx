@@ -1,8 +1,9 @@
 import Link from "next/link";
 
-import { Brain } from "lucide-react";
+import { Brain, Github } from "lucide-react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export default function NavBar() {
@@ -14,28 +15,32 @@ export default function NavBar() {
           <span className="font-poppins font-bold text-xl text-foreground">
             NeuroNote
           </span>
+          <Badge variant="secondary" className="ml-2">
+            <Github className="h-3 w-3 mr-1" />
+            Open Source
+          </Badge>
         </div>
 
-        {/* <div className="hidden md:flex items-center space-x-8">
-          <a
+        <div className="hidden md:flex items-center space-x-8">
+          <Link
             href="#features"
             className="text-sm font-medium hover:text-primary transition-colors"
           >
             Features
-          </a>
-          <a
-            href="#pricing"
+          </Link>
+          <Link
+            href="#community"
             className="text-sm font-medium hover:text-primary transition-colors"
           >
-            Pricing
-          </a>
-          <a
-            href="#testimonials"
+            Community
+          </Link>
+          <Link
+            href="#contribute"
             className="text-sm font-medium hover:text-primary transition-colors"
           >
-            Testimonials
-          </a>
-        </div> */}
+            Contribute
+          </Link>
+        </div>
 
         <div className="flex items-center space-x-4">
           <ThemeToggle />
