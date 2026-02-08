@@ -5,7 +5,7 @@ import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 
 import { Eye, EyeOff } from "lucide-react";
 
@@ -26,14 +26,21 @@ import { signInAction } from "../actions";
 export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [state, action, pending] = useActionState(signInAction, undefined);
+  const { status } = useSession();
   const router = useRouter();
 
-  // Redirect after successful sign in
   useEffect(() => {
-    if (state?.ok) {
-      router.push("/dashboard");
+    if (status === "authenticated") {
+      router.replace("/dashboard");
     }
-  }, [state, router]);
+  }, [status, router]);
+
+  // Redirect after successful sign in
+  // useEffect(() => {
+  //   if (state?.ok) {
+  //     router.push("/dashboard");
+  //   }
+  // }, [state, router]);
 
   const handleGoogleSignIn = () => {
     signIn("google", { callbackUrl: `${window.location.origin}/dashboard` });
@@ -55,7 +62,7 @@ export default function SignIn() {
           <Button
             variant="outline"
             className="w-full"
-            disabled={pending}
+            disabled={status === "loading"}
             onClick={handleGoogleSignIn}
             type="button"
           >
@@ -109,7 +116,7 @@ export default function SignIn() {
                 name="email"
                 type="email"
                 placeholder="Enter your email"
-                disabled={pending}
+                disabled={status === "loading"}
                 defaultValue={state?.values?.email ?? ""}
                 className={state?.errors?.email ? "border-destructive" : ""}
               />
@@ -126,7 +133,7 @@ export default function SignIn() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
-                  disabled={pending}
+                  disabled={status === "loading"}
                   defaultValue={state?.values?.password ?? ""}
                   className={
                     state?.errors?.password
@@ -164,8 +171,12 @@ export default function SignIn() {
               </Link>
             </div>
 
-            <Button type="submit" className="w-full" disabled={pending}>
-              {pending ? "Signing in..." : "Sign In"}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={status === "loading"}
+            >
+              {status === "loading" ? "Signing in..." : "Sign In"}
             </Button>
           </form>
 
