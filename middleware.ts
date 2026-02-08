@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getToken } from "next-auth/jwt";
+import { auth } from "@/auth";
 
 const protectedRoutes = ["/dashboard", "/documents", "/chat"]; // pages that require login
 const unprotectedRoutes = [
@@ -12,19 +12,16 @@ const unprotectedRoutes = [
 ]; // pages for guests only
 
 export default async function middleware(req: NextRequest) {
-  const token = await getToken({
-    req,
-    secret: process.env.AUTH_SECRET,
-  });
+  const session = await auth();
   const pathname = req.nextUrl.pathname;
 
   // 1. If user is not logged in and tries to access protected routes → redirect to sign in
-  if (protectedRoutes.includes(pathname) && !token) {
+  if (protectedRoutes.includes(pathname) && !session) {
     return NextResponse.redirect(new URL("/auth/signin", req.url));
   }
 
   // 2. If user is logged in and tries to access sign in/up → redirect to home
-  if (unprotectedRoutes.includes(pathname) && token) {
+  if (unprotectedRoutes.includes(pathname) && session) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
