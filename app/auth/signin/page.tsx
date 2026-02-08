@@ -36,7 +36,7 @@ export default function SignIn() {
   }, [state, router]);
 
   const handleGoogleSignIn = () => {
-    signIn("google", { callbackUrl: "/dashboard" });
+    signIn("google", { callbackUrl: `${window.location.origin}/dashboard` });
   };
 
   return (
