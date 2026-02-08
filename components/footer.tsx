@@ -38,7 +38,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="#"
+                  href="https://github.com/code-blooded-developer/neuronote?tab=readme-ov-file#installation"
                   className="hover:text-foreground transition-colors"
                 >
                   Installation Guide
@@ -82,7 +82,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="#"
+                  href="https://github.com/code-blooded-developer/neuronote/blob/main/LICENSE"
                   className="hover:text-foreground transition-colors"
                 >
                   License
