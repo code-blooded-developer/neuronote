@@ -28,7 +28,7 @@ Your Second Brain for Every Document — an AI-powered knowledge base for upload
 
 ```sh
 # Clone the repository
-git clone <YOUR_GIT_URL>
+git clone git@github.com:code-blooded-developer/neuronote.git
 
 # Navigate to the project directory
 cd neuronote
